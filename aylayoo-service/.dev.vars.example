@@ -1,0 +1,2 @@
+# Copy this file to .dev.vars (never commit .dev.vars!)
+JWT_SECRET=change-me-to-a-long-random-string
