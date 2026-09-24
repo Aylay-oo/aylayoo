@@ -1,5 +1,9 @@
 # aylayoo-service — Backend step-by-step guide
 
+> **Live:** https://aylayoo-service.sbolorsaikhan4.workers.dev
+> Deployed 2026-09-24. D1 `aylayoo-db` (EEUR), R2 `aylayoo-images`, KV `RATE_LIMIT` — all bound and seeded.
+> Steps 4–9 below are already done for this account; they remain as a reference for rebuilding from scratch.
+
 Cloudflare Workers + Hono + D1 (database) + R2 (images) + Drizzle + Zod.
 Lives in the monorepo at `apps/aylayoo/aylayoo-service/`, port **4003**.
 
