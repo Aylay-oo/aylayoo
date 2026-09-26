@@ -16,6 +16,9 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Багийн мэдээлэл ачаалахад алдаа гарлаа': 'Could not load the team',
   'Заавал очих газрууд ачаалахад алдаа гарлаа': 'Could not load the must-see places',
   'Дахин ачаална уу': 'Please reload',
+  /* Empty states for content the design always had, but a real database might not. */
+  'Энэ аймагт бүртгэлтэй газар одоохондоо алга.': 'No places are listed for this province yet.',
+  'Заавал очих газрууд одоохондоо алга.': 'No must-see places are listed yet.',
 
   /* ---- contact and booking dialog ---- */
   'Утас эсвэл имэйлээ бүтэн бичнэ үү': 'Enter a full phone number or email address',
