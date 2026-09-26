@@ -26,6 +26,10 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
     'No verified guides are registered yet. If you are a guide, a driver or a tour company, register yourself — we will review it and add you to the site.',
   'Энэ төрлийн хөтөч одоохондоо алга.': 'No guides of this kind yet.',
   'Бүгдийг харах': 'Show all',
+  'Багийн мэдээлэл одоохондоо алга.': 'No team members are listed yet.',
+  // The badge a team member gets when no school is recorded. The design showed it too, but
+  // its dictionary never needed an entry because all four members had a school.
+  Маркетинг: 'Marketing',
 
   /* ---- contact and booking dialog ---- */
   'Утас эсвэл имэйлээ бүтэн бичнэ үү': 'Enter a full phone number or email address',
@@ -52,6 +56,10 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Байнга явдаг чиглэл': 'Routes you usually travel',
   'Машин': 'Vehicle',
   'Жишээ нь: Land Cruiser 200': 'e.g. Land Cruiser 200',
+  /* A whole-string entry, like the design's own "Жишээ нь: …" placeholder. The generic
+   * "X: Y" rule would look up "Жишээ нь" without its colon, which is not a key, and leave
+   * the prefix in Mongolian next to translated aimag names. */
+  'Жишээ нь: Хөвсгөл, Архангай': 'e.g. Khövsgöl, Arkhangai',
   'Танилцуулга': 'About you',
   'Зураг (сонголтоор)': 'Photo (optional)',
   'Бүртгүүлэх хүсэлт илгээхэд алдаа гарлаа': 'Could not send your registration',

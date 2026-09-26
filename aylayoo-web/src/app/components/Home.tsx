@@ -1,14 +1,18 @@
 'use client';
 
 import { useCallback } from 'react';
-import { getAimags, getGuides, getPlaces } from '../../lib/api';
+import { getAimags, getGuides, getPlaces, getTeam } from '../../lib/api';
 import { useResource } from '../../lib/use-resource';
+import { ContactDialog } from './ContactDialog';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { GuidesSection } from './GuidesSection';
 import { MustSeeCarousel } from './MustSeeCarousel';
 import { QuickLinks } from './QuickLinks';
+import { RegisterDialog } from './RegisterDialog';
+import { TeamSection } from './TeamSection';
+import { Toast } from './Toast';
 import { WhereSection } from './WhereSection';
 import { WhySection } from './WhySection';
 
@@ -29,6 +33,7 @@ export function Home() {
   const guides = useResource(useCallback(async () => (await getGuides()).data, []));
   // Its own request, as the must-see carousel is the only thing that needs this slice.
   const mustSee = useResource(useCallback(() => getPlaces({ mustSee: true }), []));
+  const team = useResource(getTeam);
 
   return (
     <>
@@ -40,8 +45,15 @@ export function Home() {
         <MustSeeCarousel places={mustSee} />
         <WhySection />
         <GuidesSection guides={guides} />
+        <TeamSection team={team} />
       </main>
       <Footer />
+
+      {/* Rendered once at the root, because they are opened from all over the page. The
+          registration form needs the aimag list for its "where do you work" picker. */}
+      <ContactDialog />
+      <RegisterDialog aimags={aimags.data ?? []} />
+      <Toast />
     </>
   );
 }
