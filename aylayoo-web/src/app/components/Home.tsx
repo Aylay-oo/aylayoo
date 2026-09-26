@@ -6,6 +6,7 @@ import { useResource } from '../../lib/use-resource';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { Hero } from './Hero';
+import { GuidesSection } from './GuidesSection';
 import { MustSeeCarousel } from './MustSeeCarousel';
 import { QuickLinks } from './QuickLinks';
 import { WhereSection } from './WhereSection';
@@ -38,6 +39,7 @@ export function Home() {
         <WhereSection aimags={aimags} places={places} guides={guides} />
         <MustSeeCarousel places={mustSee} />
         <WhySection />
+        <GuidesSection guides={guides} />
       </main>
       <Footer />
     </>

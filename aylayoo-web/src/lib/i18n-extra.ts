@@ -16,9 +16,16 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Багийн мэдээлэл ачаалахад алдаа гарлаа': 'Could not load the team',
   'Заавал очих газрууд ачаалахад алдаа гарлаа': 'Could not load the must-see places',
   'Дахин ачаална уу': 'Please reload',
-  /* Empty states for content the design always had, but a real database might not. */
+  /* Empty states for content the design always had, but a real database might not.
+   * The guides one matters most: the site launches with an empty guides table, because the
+   * pre-launch sample guides are deleted and real ones arrive by registration. */
   'Энэ аймагт бүртгэлтэй газар одоохондоо алга.': 'No places are listed for this province yet.',
   'Заавал очих газрууд одоохондоо алга.': 'No must-see places are listed yet.',
+  'Хөтчүүд удахгүй нэмэгдэнэ': 'Guides are coming soon',
+  'Одоогоор баталгаажсан хөтөч бүртгэгдээгүй байна. Та хөтөч, жолооч эсвэл аяллын компани бол өөрийгөө бүртгүүлээрэй — бид шалгаад сайт дээр нэмнэ.':
+    'No verified guides are registered yet. If you are a guide, a driver or a tour company, register yourself — we will review it and add you to the site.',
+  'Энэ төрлийн хөтөч одоохондоо алга.': 'No guides of this kind yet.',
+  'Бүгдийг харах': 'Show all',
 
   /* ---- contact and booking dialog ---- */
   'Утас эсвэл имэйлээ бүтэн бичнэ үү': 'Enter a full phone number or email address',

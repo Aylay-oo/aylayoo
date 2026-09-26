@@ -14,8 +14,11 @@ const config = {
   testEnvironment: 'jsdom',
   // Specs live next to the code they cover.
   testMatch: ['<rootDir>/src/**/*.spec.ts', '<rootDir>/src/**/*.spec.tsx'],
-  // Polyfills window.matchMedia, which jsdom lacks and the hover/reduced-motion code needs.
-  setupFiles: ['<rootDir>/jest-setup.ts'],
+  /* Polyfills window.matchMedia and ResizeObserver, which jsdom lacks, and clears
+   * localStorage between tests so a language switch does not leak into the next one.
+   * setupFilesAfterEnv rather than setupFiles, because it registers a beforeEach and the
+   * test framework has to exist by then. */
+  setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
 };
 
 const jestConfig = createJestConfig(config);

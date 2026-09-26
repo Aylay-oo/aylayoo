@@ -107,6 +107,32 @@
 #mustsee .notice button { background: transparent; border-color: var(--lime); color: var(--lime); }
 #mustsee .notice button:hover { background: var(--lime); color: var(--night); }
 
+/* ---------- "No guides yet" ---------- */
+
+/* How the guides section looks at launch, before anyone has registered. Built from the same
+ * pieces as the design's .city-card — same radius, border, centred column and round icon —
+ * so it reads as part of the page rather than as an error. */
+.guides-empty {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--paper);
+  padding: 44px 28px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.guides-empty h3 {
+  font-family: var(--font-h);
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+.guides-empty p {
+  color: var(--muted);
+  font-size: 14.5px;
+  max-width: 54ch;
+  margin: 10px auto 24px;
+}
+
 /* ---------- Guide registration form ---------- */
 
 /* The registration dialog is taller than the contact one and scrolls on a phone. */

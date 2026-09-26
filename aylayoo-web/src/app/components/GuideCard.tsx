@@ -14,9 +14,19 @@ type GuideCardProps = {
   guide: Guide;
   /** The "covers 2 of your 3 provinces" line, shown only in the recommendation list. */
   coverage?: string;
+  /**
+   * One of the marquee's duplicate cards. It looks identical — that is the point, it is the
+   * seamless continuation of the row — but it is hidden from assistive technology and made
+   * inert, so nobody tabs into the same guide twice or hears the list read out doubled.
+   *
+   * The attributes go on the <article> rather than a wrapper because globals.css sizes
+   * `.car-track > *` directly; a wrapper would take the flex sizing and leave the card
+   * inside it at its natural height, making clones visibly shorter than the originals.
+   */
+  clone?: boolean;
 };
 
-export function GuideCard({ guide, coverage }: GuideCardProps) {
+export function GuideCard({ guide, coverage, clone = false }: GuideCardProps) {
   const { t, pick } = useLang();
   const { openContact } = useDialogs();
 
@@ -27,7 +37,7 @@ export function GuideCard({ guide, coverage }: GuideCardProps) {
   const isDriver = guide.type === 'driver';
 
   return (
-    <article className="g-card">
+    <article className="g-card" aria-hidden={clone || undefined} inert={clone || undefined}>
       <div className="g-top">
         {photo ? (
           <Image
