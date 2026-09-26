@@ -1,26 +1,53 @@
 import { z } from 'zod';
-import { GUIDE_STATUSES, GUIDE_TYPES, PLACE_CATEGORIES, TRIP_TYPES } from '../db/schema';
+import {
+  CONTACT_KINDS, GUIDE_STATUSES, GUIDE_TYPES, PLACE_CATEGORIES, TRIP_TYPES,
+} from '../db/schema';
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 
-export const guideRegisterSchema = z.object({
-  type: z.enum(GUIDE_TYPES),
-  name: z.string().trim().min(2).max(120),
-  bioMn: optionalText(2000),
-  bioEn: optionalText(2000),
-  languages: z.array(z.string().trim().min(2).max(5)).min(1).max(10), // e.g. ["mn","en","ru"]
-  tripTypes: z.array(z.enum(TRIP_TYPES)).min(1),
-  aimagIds: z.array(z.number().int().positive()).min(1).max(22),
-  phone: z.string().trim().min(6).max(30),
-  email: z.string().trim().email(),
-  website: z.string().trim().url().optional().or(z.literal('')),
-});
+export const guideRegisterSchema = z
+  .object({
+    type: z.enum(GUIDE_TYPES),
+    name: z.string().trim().min(2).max(120),
+    bioMn: optionalText(2000),
+    bioEn: optionalText(2000),
+    languages: z.array(z.string().trim().min(2).max(5)).min(1).max(10), // e.g. ["mn","en","ru"]
+    tripTypes: z.array(z.enum(TRIP_TYPES)).min(1),
+    aimagIds: z.array(z.number().int().positive()).min(1).max(22),
+    phone: z.string().trim().min(6).max(30),
+    email: z.string().trim().email(),
+    website: z.string().trim().url().optional().or(z.literal('')),
+    experienceYears: z.number().int().min(0).max(70).optional(),
+    routeMn: optionalText(300),
+    routeEn: optionalText(300),
+    car: optionalText(120),
+  })
+  // A driver's vehicle is the one thing their card shows in place of languages, so the
+  // form has to come back with it. Guides and companies must not send one.
+  .refine((v) => v.type !== 'driver' || !!v.car?.trim(), {
+    path: ['car'],
+    message: 'Drivers must say which car they drive',
+  })
+  .refine((v) => v.type === 'driver' || !v.car?.trim(), {
+    path: ['car'],
+    message: 'Only drivers can have a car',
+  });
 
-export const contactSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  email: z.string().trim().email(),
-  message: z.string().trim().min(5).max(3000),
-});
+export const contactSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    email: z.string().trim().email().optional().or(z.literal('')),
+    phone: z.string().trim().min(6).max(30).optional().or(z.literal('')),
+    message: z.string().trim().min(5).max(3000),
+    guideId: z.number().int().positive().optional(),
+    subject: optionalText(200),
+    kind: z.enum(CONTACT_KINDS).default('contact'),
+  })
+  // The form asks for "phone or email", so either one alone is enough — but not neither.
+  .refine((v) => !!v.email || !!v.phone, {
+    path: ['email'],
+    message: 'Give either a phone number or an email address',
+  });
 
 export const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -36,10 +63,17 @@ export const placeSchema = z.object({
   descriptionMn: optionalText(5000),
   descriptionEn: optionalText(5000),
   category: z.enum(PLACE_CATEGORIES),
-  lat: z.number().min(41).max(53), // Mongolia's latitude range
-  lng: z.number().min(87).max(120), // Mongolia's longitude range
+  lat: z.number().min(41).max(53).nullish(), // Mongolia's latitude range
+  lng: z.number().min(87).max(120).nullish(), // Mongolia's longitude range
   images: z.array(z.string()).max(20).optional(),
   isMustSee: z.boolean().optional(),
+  imageKey: optionalText(40),
+  bestMonthsMn: optionalText(60),
+  bestMonthsEn: optionalText(60),
+  mustTitleMn: optionalText(200),
+  mustTitleEn: optionalText(200),
+  mustSummaryMn: optionalText(1000),
+  mustSummaryEn: optionalText(1000),
 });
 
 export const factSchema = z.object({
@@ -56,4 +90,10 @@ export const teamMemberSchema = z.object({
   role: z.string().trim().min(1).max(100),
   photoUrl: optionalText(500),
   sortOrder: z.number().int().optional(),
+  nameEn: optionalText(100),
+  roleEn: optionalText(100),
+  schoolMn: optionalText(120),
+  schoolEn: optionalText(120),
+  descriptionMn: optionalText(1000),
+  descriptionEn: optionalText(1000),
 });

@@ -1,0 +1,54 @@
+{
+  "name": "aylayoo-web",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/aylayoo/aylayoo-web",
+  "projectType": "application",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project aylayoo-web --web",
+  "// deploy": "This app deploys to Vercel (project `ayalyoo-web`), not Cloudflare — so there is no opennextjs/wrangler target here, unlike goal-tracker-web. Vercel builds it from git; see the README.",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "// port": "3000 because aylayoo-service's ALLOWED_ORIGINS only permits localhost:3000 and :5173.",
+        "command": "rm -rf .next && bunx next dev --port 3000",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bunx next build",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bunx jest",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["{projectRoot}/src/**/*.ts", "{projectRoot}/src/**/*.tsx"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bunx tsc --noEmit -p tsconfig.json",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "extract-photos": {
+      "executor": "nx:run-commands",
+      "options": {
+        "// why": "One-off: turns the design mockup's 41 inline base64 photos into public/images/*.jpg. Already committed; re-run only if the mockup's photos change.",
+        "command": "node scripts/extract-photos.mjs",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    }
+  }
+}

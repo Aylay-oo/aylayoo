@@ -31,12 +31,13 @@ Copy this whole `aylayoo-service` folder into `apps/aylayoo/`, so you get:
 ```
 apps/aylayoo/aylayoo-service/
 ├── wrangler.jsonc          Cloudflare config (D1 + R2 + KV + port)
-├── project.json            Nx commands (serve, deploy, migrate, seed)
+├── project.json            Nx commands (serve, deploy, migrate, seed-local)
 ├── tsconfig.json
 ├── drizzle.config.ts
 ├── .dev.vars.example       secret template
 ├── .gitignore
-├── seed/seed.sql           21 aimags + UB, places, sample guides, facts
+├── seed/seed.sql           LOCAL seed: 22 aimags, 67 places, demo guides, facts, team
+├── seed/prod-*.sql         reviewed production data imports
 ├── scripts/hash-password.ts
 └── src/
     ├── index.ts            app entry: CORS + all routes
@@ -106,7 +107,33 @@ bunx wrangler d1 execute aylayoo-db --local --file=seed/seed.sql   # fills in sa
 
 Or with Nx from the root: `bunx nx run aylayoo-service:drizzle:generate`, then `:wrangler:migrate-local`, then `:seed-local`.
 
-Whenever you change `src/db/schema.ts` later: run `drizzle-kit generate` again, then apply migrations again.
+Whenever you change `src/db/schema.ts` later: run `drizzle-kit generate` again, then apply migrations again. **Never edit a migration that has already been applied to production** — add a new one.
+
+> ⚠️ When a change makes a column nullable, SQLite cannot alter it in place, so drizzle-kit
+> rebuilds the whole table. It has a bug there: the generated `INSERT ... SELECT` lists the
+> *newly added* columns in the `SELECT` too, and the old table has none of them
+> (`no such column: …`). Trim the `SELECT` to the columns that already exist — see the
+> hand-corrected comments in `drizzle/0001_great_leper_queen.sql`.
+
+### Migration history
+
+| File | What it does |
+|---|---|
+| `0000_daily_charles_xavier.sql` | the original 8 tables |
+| `0001_great_leper_queen.sql` | everything the front-end design needs: `driver` guide type support (`experience_years`, `route_mn/en`, `car`, nullable `rating`/`review_count`), aimag `iso_code`/`center_mn/en`/`area_km2`, place `image_key`/`best_months_*`/`must_title_*`/`must_summary_*` and **nullable `lat`/`lng`**, team `name_en`/`role_en`/`school_*`/`description_*`, and contact `phone`/`guide_id`/`subject`/`kind` with **nullable `email`**. Rebuilds `places` and `contact_messages`. |
+
+### Seeds
+
+| File | Where it may run |
+|---|---|
+| `seed/seed.sql` | **`--local` only.** Deletes every row first, then loads the 22 aimags, all 67 places from the design and 10 *demo* guides with mock ratings, so a fresh local database looks like the mockup. Running this against production would destroy real data. |
+| `seed/prod-2026-09-26-design-import.sql` | The reviewed production import: backfills the aimags, updates the 12 existing places to the design's text, inserts the other 55, narrows must-see to the design's 6, installs the 4 real team members and deletes the pre-launch `(sample)` guides. Never deletes a place or a real guide, and every insert is guarded so a second run is a no-op. |
+
+Before any `--remote` migration, take a backup first:
+
+```bash
+bunx wrangler d1 export aylayoo-db --remote --output=backups/pre-0001.sql   # backups/ is gitignored
+```
 
 ## Step 7 — Create your admin account
 
@@ -146,14 +173,18 @@ curl -X POST http://localhost:4003/api/admin/login \
 ```bash
 bunx wrangler secret put JWT_SECRET                         # paste a NEW random string (not the local one)
 bunx wrangler d1 migrations apply aylayoo-db --remote
-bunx wrangler d1 execute aylayoo-db --remote --file=seed/seed.sql
+# (removed: seed.sql is local-only — see Seeds in this README)
 bunx wrangler d1 execute aylayoo-db --remote --command "INSERT INTO admins (email, password_hash) VALUES ('ayalyoo123@gmail.com', 'PASTE_HASH_HERE')"
 bunx wrangler deploy
 ```
 
 Wrangler prints your live URL, e.g. `https://aylayoo-service.<your-account>.workers.dev`.
 
-⚠️ `seed.sql` deletes and re-creates the data. Only run it on the remote DB **once**, before real guides register.
+⚠️ **`seed.sql` must never be run with `--remote`.** It deletes every row first, and
+production now holds real data. Changes there go through a reviewed `seed/prod-*.sql` (see
+[Seeds](#seeds) above), after `d1 export`. Note the asymmetry that makes this easy to get
+wrong: `d1 execute` defaults to **remote**, while `r2 object` defaults to **local** — always
+pass `--local` or `--remote` explicitly.
 
 ## Step 10 — Commit and open a Pull Request
 
@@ -176,16 +207,25 @@ All responses are JSON. Lists look like `{ "data": [...] }`, errors like `{ "err
 
 | Method | URL | Notes |
 |---|---|---|
-| GET | `/api/aimags` | all aimags |
+| GET | `/api/aimags` | all aimags, each with `isoCode`, `centerMn/En`, `areaKm2` |
 | GET | `/api/aimags/:slug` | one aimag + its `places` |
 | GET | `/api/places` | query: `aimag`, `category` (nature/historical/city/cultural), `mustSee=true` |
-| GET | `/api/guides` | query: `aimag` (comma-separated slugs, e.g. `umnugovi,khuvsgul`), `type` (company/individual), `language` (mn/en/…), `tripType` (city/countryside), `page`, `limit`. Returns `pagination` too |
+| GET | `/api/guides` | query: `aimag` (comma-separated slugs, e.g. `umnugovi,khuvsgul`), `type` (company/individual/driver), `language` (mn/en/…), `tripType` (city/countryside), `page`, `limit` (max 50). Returns `pagination` too |
 | GET | `/api/guides/:id` | one approved guide with its aimags |
 | POST | `/api/guides/register` | multipart form: `data` = JSON string, `photo` = image (optional). Saved as **pending** |
-| POST | `/api/contact` | JSON `{ name, email, message }` |
+| POST | `/api/contact` | JSON — see below |
 | GET | `/api/facts` | traveler facts |
-| GET | `/api/team` | team members |
+| GET | `/api/team` | team members, Mongolian + English |
 | GET | `/api/images/*` | serves uploaded images (use the `photoUrl` you get back) |
+
+### Guide types
+
+`individual` is a private guide, `company` a tour operator, `driver` a driver with their own
+vehicle. A `driver` **must** send `car` and no one else may; the front end shows the car on a
+driver's card where a guide's card shows languages.
+
+`rating` and `reviewCount` are `null` until real travellers leave one, and the UI hides the
+stars while they are. Registration cannot set them.
 
 Register `data` example:
 
@@ -199,9 +239,34 @@ Register `data` example:
   "aimagIds": [21],
   "phone": "+976 99110001",
   "email": "bat@example.com",
-  "website": ""
+  "website": "",
+  "experienceYears": 6,
+  "routeMn": "Хөвсгөл, Архангай", "routeEn": "Khövsgöl, Arkhangai",
+  "car": "Land Cruiser 200"
 }
 ```
+
+### Contact and booking
+
+`POST /api/contact` takes a **phone number or an email address** — either alone is fine, but
+not neither (400 otherwise). The dialog is opened from a guide or from a trip, so it also
+sends where it came from:
+
+```json
+{
+  "name": "Sarnai",
+  "phone": "+976 99112233",
+  "email": "",
+  "message": "Хоёр хүн, 7 сард Хөвсгөл",
+  "guideId": 12,
+  "subject": "Горхи-Тэрэлж",
+  "kind": "booking"
+}
+```
+
+`kind` is `"contact"` (writing to a guide, the default) or `"booking"` (ordering a listed
+trip); `subject` is the guide or trip name the dialog was opened with; `guideId` is set only
+when it was opened from a guide's card. Messages are read back at `/api/admin/messages`.
 
 Front-end example:
 
@@ -255,4 +320,3 @@ Allowed front-end addresses are in `wrangler.jsonc` → `vars.ALLOWED_ORIGINS`. 
 # Next steps (later)
 
 - Email notification to admins when a new guide registers
-- Replace the sample guides and team names in `seed.sql` with real ones

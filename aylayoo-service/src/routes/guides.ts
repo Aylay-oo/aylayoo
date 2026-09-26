@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { and, count, desc, eq, getTableColumns, inArray, sql, type SQL } from 'drizzle-orm';
 import { getDb, type Db } from '../db/client';
-import { aimags, guideAimags, guides } from '../db/schema';
+import { aimags, guideAimags, GUIDE_TYPES, guides, type GuideType } from '../db/schema';
 import { getFile, uploadImage } from '../lib/http';
 import { rateLimit } from '../lib/rate-limit';
 import { guideRegisterSchema } from '../lib/validators';
@@ -38,7 +38,9 @@ guideRoutes.get('/', async (c) => {
 
   const conditions: SQL[] = [eq(guides.status, 'approved')];
 
-  if (q.type === 'company' || q.type === 'individual') conditions.push(eq(guides.type, q.type));
+  if ((GUIDE_TYPES as readonly string[]).includes(q.type)) {
+    conditions.push(eq(guides.type, q.type as GuideType));
+  }
 
   if (q.language) {
     conditions.push(sql`exists (select 1 from json_each(${guides.languages}) where value = ${q.language})`);
@@ -131,6 +133,12 @@ guideRoutes.post('/register', rateLimit({ name: 'register', limit: 3, windowSeco
       website: input.website || null,
       photoUrl,
       status: 'pending',
+      experienceYears: input.experienceYears ?? null,
+      routeMn: input.routeMn ?? null,
+      routeEn: input.routeEn ?? null,
+      car: input.car ?? null,
+      // rating / reviewCount stay null: they are earned from real travellers, never
+      // supplied at registration.
     })
     .returning({ id: guides.id });
 

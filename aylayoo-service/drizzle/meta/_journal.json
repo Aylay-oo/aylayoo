@@ -8,6 +8,13 @@
       "when": 1790250284253,
       "tag": "0000_daily_charles_xavier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790250284254,
+      "tag": "0001_great_leper_queen",
+      "breakpoints": true
     }
   ]
 }

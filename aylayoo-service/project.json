@@ -28,10 +28,7 @@
       "executor": "nx:run-commands",
       "options": { "command": "wrangler d1 execute aylayoo-db --local --file=seed/seed.sql", "cwd": "apps/aylayoo/aylayoo-service" }
     },
-    "seed-remote": {
-      "executor": "nx:run-commands",
-      "options": { "command": "wrangler d1 execute aylayoo-db --remote --file=seed/seed.sql", "cwd": "apps/aylayoo/aylayoo-service" }
-    },
+    "// no seed-remote target": "seed/seed.sql starts by DELETEing every row, so it must never touch production. Data changes there go through a reviewed seed/prod-*.sql, run by hand after a backup — see the README.",
     "typecheck": {
       "executor": "nx:run-commands",
       "options": { "command": "tsc --noEmit -p tsconfig.json", "cwd": "apps/aylayoo/aylayoo-service" }
