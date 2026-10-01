@@ -6,6 +6,9 @@
  */
 
 export const I18N_EXTRA: Readonly<Record<string, string>> = {
+  /* ---- navigation the design did not have ---- */
+  'Үндсэн агуулга руу шилжих': 'Skip to main content',
+
   /* ---- loading and errors ---- */
   'Ачаалж байна…': 'Loading…',
   'Дахин оролдох': 'Try again',

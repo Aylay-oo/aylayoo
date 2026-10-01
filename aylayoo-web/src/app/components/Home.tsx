@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { getAimags, getGuides, getPlaces, getTeam } from '../../lib/api';
 import { useResource } from '../../lib/use-resource';
 import { ContactDialog } from './ContactDialog';
+import { SkipLink } from './SkipLink';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { Hero } from './Hero';
@@ -37,6 +38,8 @@ export function Home() {
 
   return (
     <>
+      {/* First focusable thing on the page, so Tab from the address bar reaches it. */}
+      <SkipLink />
       <Header />
       <main id="top">
         <Hero aimags={aimags.data ?? []} aimagsLoading={aimags.loading} />

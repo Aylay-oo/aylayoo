@@ -123,10 +123,11 @@ export function Checklist({
 
               return (
                 <div className="cl-group" key={code}>
-                  <h5>
+                  {/* h4, not the design's h5: the checklist title above is an h3. */}
+                  <h4>
                     <i style={{ background: REGION[region].color }} />
                     {aimag ? pick(aimag.nameMn, aimag.nameEn) : code}
-                  </h5>
+                  </h4>
                   <div className="cl-grid">
                     {group.map((place) => (
                       <label className="cl-item" key={place.id}>

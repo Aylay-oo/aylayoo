@@ -5,6 +5,7 @@ import { LangProvider } from '../../lib/i18n';
 import { TravelStateProvider } from '../../lib/travel-state';
 import type { Resource } from '../../lib/use-resource';
 import { Footer } from './Footer';
+import { SkipLink } from './SkipLink';
 import { GuidesSection } from './GuidesSection';
 import { Header } from './Header';
 import { Hero } from './Hero';
@@ -66,6 +67,7 @@ function renderPage() {
     <LangProvider>
       <TravelStateProvider>
         <DialogsProvider>
+          <SkipLink />
           <Header />
           <main id="top">
             <Hero aimags={AIMAGS} aimagsLoading={false} />
@@ -232,6 +234,31 @@ describe('document structure', () => {
   it('has exactly one h1', () => {
     renderPage();
     expect(document.querySelectorAll('h1')).toHaveLength(1);
+  });
+
+  it('offers a skip link as the first focusable thing on the page', () => {
+    renderPage();
+    const focusable = [...document.querySelectorAll('a[href], button, input, select, textarea')]
+      .filter((el) => el.getAttribute('tabindex') !== '-1');
+    expect(focusable[0]?.textContent).toBe('Үндсэн агуулга руу шилжих');
+    expect(focusable[0]?.getAttribute('href')).toBe('#top');
+    // And it points at something that exists.
+    expect(document.getElementById('top')).toBeTruthy();
+  });
+
+  it('skips no heading levels', () => {
+    /* The design put an <h5> under the checklist's <h3>, before the <h4> further down. These
+     * are now <h4>, styled to compute identically. */
+    renderPage();
+    const levels = [...document.querySelectorAll('h1, h2, h3, h4, h5, h6')]
+      .map((h) => Number(h.tagName[1]));
+
+    const jumps = levels
+      .map((level, i) => (i === 0 ? 0 : level - levels[i - 1]))
+      .map((delta, i) => ({ delta, at: levels[i], index: i }))
+      .filter(({ delta }) => delta > 1);
+
+    expect(jumps).toEqual([]);
   });
 
   it('gives every landmark region a name where there is more than one of its kind', () => {

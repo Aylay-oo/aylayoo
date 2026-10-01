@@ -10,6 +10,43 @@
  * Everything here reuses the design's custom properties, so it follows the same palette.
  * ========================================================================== */
 
+/* ---------- Skip link ---------- */
+
+/* Hidden until focused, then slides down over the sticky header. The design had none, and a
+ * page with a six-item nav in front of the content needs one. */
+.skip-link {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 100;
+  transform: translate(-50%, -140%);
+  background: var(--green);
+  color: #fff;
+  font: 700 14px var(--font-b);
+  padding: 12px 22px;
+  border-radius: 0 0 12px 12px;
+  text-decoration: none;
+  transition: transform .15s;
+}
+.skip-link:focus { transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
+/* ---------- Checklist group headings ---------- */
+
+/* These are <h4> rather than the design's <h5>: the checklist's own title is an <h3>, so an
+ * <h5> under it skipped a level, and it came before the <h4> further down. Same computed
+ * style as `.cl-group h5` so nothing moves — including letter-spacing, which an <h4> would
+ * otherwise inherit as -.01em from the h1–h4 rule while an <h5> got normal. */
+.cl-group h4 {
+  font: 800 15px var(--font-h);
+  letter-spacing: normal;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cl-group h4 i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+
 /* ---------- Buttons stripped of their chrome, but not their focus ring ---------- */
 
 /* The aimag chip's name is a button that focuses that aimag. The design styled it with an
