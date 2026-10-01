@@ -2,7 +2,9 @@
 
 Next.js (App Router) + TypeScript, built from the final design at
 `apps/aylayoo/design/aylayoo_3.html` and fed by [aylayoo-service](../aylayoo-service/README.md).
-Deploys to Vercel.
+Deploys to **Cloudflare Workers** via OpenNext, the same way `goal-tracker-web` does.
+
+> **Live:** https://aylayoo-web.sbolorsaikhan4.workers.dev · admin at `/admin`
 
 ```bash
 # 1. the API (port 4003, local D1 already seeded)
@@ -27,6 +29,8 @@ Or with Nx from the repo root: `bunx nx run aylayoo-web:dev`.
 | `nx run aylayoo-web:lint` | eslint |
 | `nx run aylayoo-web:typecheck` | tsc --noEmit |
 | `nx run aylayoo-web:extract-photos` | re-extracts the design's photos into `public/images` |
+| `nx run aylayoo-web:preview` | builds and runs the real Worker locally on :8787 |
+| `nx run aylayoo-web:deploy` | builds and deploys to Cloudflare |
 
 ## How it fits together
 
@@ -44,9 +48,67 @@ the browser gets WebP anyway.
 
 ## Environment
 
-`NEXT_PUBLIC_API_URL` — the only variable. Copy `.env.example` to `.env.local` for local work;
-set it in the Vercel project for production. It is inlined at build time, so it must be present
-when you build.
+`NEXT_PUBLIC_API_URL` — the only variable. Copy `.env.example` to `.env.local` for local work.
+
+**It is inlined into the client bundle by `next build`**, which is the one thing to understand
+about deploying this app: setting it as a Worker var or a Cloudflare secret does nothing,
+because the browser code has already been compiled by then. The `deploy` and `preview` targets
+therefore set it on the build command itself. If the live site loads but every section is
+empty, this is the first thing to check — the bundle is probably still pointing at
+`localhost:4003`.
+
+```bash
+# confirm what a built bundle actually points at
+grep -rl "aylayoo-service.sbolorsaikhan4.workers.dev" .next/static/chunks/*.js
+```
+
+## Deploying to Cloudflare
+
+```bash
+bunx wrangler login                      # once
+bunx nx run aylayoo-web:preview          # optional: the real Worker on :8787
+bunx nx run aylayoo-web:deploy
+```
+
+Or from inside this directory, without Nx: `bun run cf:deploy`.
+
+Each does three things in order — `next build` with the live API URL, `opennextjs-cloudflare
+build --skipNextBuild`, then `deploy` (or `preview`). The Worker is named `aylayoo-web` in
+`wrangler.jsonc`, and `output: 'standalone'` in `next.config.js` is what `--skipNextBuild` consumes.
+
+Two things to know:
+
+- **CORS.** The API only answers browsers from an origin in its allow-list. The deployed
+  address `https://aylayoo-web.sbolorsaikhan4.workers.dev` is already in
+  `aylayoo-service/wrangler.jsonc`, but that list only takes effect when **the service** is
+  redeployed. A new front-end domain means editing that file and running
+  `bunx nx run aylayoo-service:deploy`.
+- **Images are unoptimized.** Next's optimiser needs `sharp`, which cannot run in the Workers
+  runtime, and `/cdn-cgi/image` is not available on a `workers.dev` subdomain. So `next/image`
+  serves the files from `public/images` as they are, through the Worker's assets binding. The
+  41 photos total 3.4 MB, and a first visit pulls about 645 KB for the four hero slides. If
+  that becomes a problem the options are a Cloudflare Images loader on a custom domain, or a
+  build-time WebP step — which needs an encoder this machine does not have (`sips` reads WebP
+  but cannot write it).
+
+## Building outside the monorepo
+
+This app is also pushed to the Aylay-oo team's repo with
+`git subtree push --prefix=apps/aylayoo aylayoo main`, where there is no monorepo root. It
+builds and deploys there unchanged, because nothing it needs lives above its own directory:
+
+| | |
+|---|---|
+| `package.json` | its own, with every dependency declared. Inside the monorepo the root install already satisfies them. |
+| `next.config.js` | a plain config — no `@nx/next` wrapper — that finds the workspace root by looking for whichever `node_modules` holds Next |
+| `tsconfig.json` | self-contained; the settings `tsconfig.base.json` used to provide are inlined |
+| `jest.config.cts` | no Nx preset; `next/jest` provides the transform and every import here is relative |
+| `eslint.config.mjs` | self-contained, loading the Nx plugin only if it happens to be present |
+
+```bash
+# in the Aylay-oo repo
+cd aylayoo-web && bun install && bun run cf:deploy
+```
 
 ## /admin
 

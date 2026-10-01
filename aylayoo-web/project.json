@@ -5,7 +5,7 @@
   "projectType": "application",
   "tags": [],
   "// targets": "to see all targets run: nx show project aylayoo-web --web",
-  "// deploy": "This app deploys to Vercel (project `ayalyoo-web`), not Cloudflare — so there is no opennextjs/wrangler target here, unlike goal-tracker-web. Vercel builds it from git; see the README.",
+  "// deploy": "Deploys to Cloudflare Workers via OpenNext, the same way goal-tracker-web does. NEXT_PUBLIC_API_URL is inlined by `next build`, so the deploy targets set it inline — a Worker var would arrive too late to reach the client bundle.",
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
@@ -32,7 +32,10 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["{projectRoot}/src/**/*.ts", "{projectRoot}/src/**/*.tsx"]
+        "lintFilePatterns": [
+          "{projectRoot}/src/**/*.ts",
+          "{projectRoot}/src/**/*.tsx"
+        ]
       }
     },
     "typecheck": {
@@ -47,6 +50,34 @@
       "options": {
         "// why": "One-off: turns the design mockup's 41 inline base64 photos into public/images/*.jpg. Already committed; re-run only if the mockup's photos change.",
         "command": "node scripts/extract-photos.mjs",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "lint"
+      ],
+      "options": {
+        "commands": [
+          "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev bunx next build",
+          "bunx opennextjs-cloudflare build --skipNextBuild",
+          "bunx opennextjs-cloudflare deploy"
+        ],
+        "parallel": false,
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "// why": "Runs the built Worker locally in workerd, which is the only way to see what Cloudflare will actually serve. Points at the live API, because that is what the production bundle is built against.",
+        "commands": [
+          "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev bunx next build",
+          "bunx opennextjs-cloudflare build --skipNextBuild",
+          "bunx opennextjs-cloudflare preview"
+        ],
+        "parallel": false,
         "cwd": "apps/aylayoo/aylayoo-web"
       }
     }

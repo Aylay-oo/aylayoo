@@ -1,6 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ApiError } from '../../lib/api';
-import type { AdminGuide, ContactMessage } from '../../lib/admin-api';
+import {
+  adminLogin, getAdminGuides, getMessages, setGuideStatus,
+  type AdminGuide, type ContactMessage,
+} from '../../lib/admin-api';
 import AdminPage from './page';
 
 jest.mock('../../lib/admin-api', () => {
@@ -14,11 +17,12 @@ jest.mock('../../lib/admin-api', () => {
   };
 });
 
-const api = require('../../lib/admin-api') as {
-  adminLogin: jest.Mock;
-  getAdminGuides: jest.Mock;
-  setGuideStatus: jest.Mock;
-  getMessages: jest.Mock;
+// jest.mock above is hoisted, so these imports are already the mocks.
+const api = {
+  adminLogin: jest.mocked(adminLogin),
+  getAdminGuides: jest.mocked(getAdminGuides),
+  setGuideStatus: jest.mocked(setGuideStatus),
+  getMessages: jest.mocked(getMessages),
 };
 
 /* The admin screen is the only place that can change what the public site shows, so the things

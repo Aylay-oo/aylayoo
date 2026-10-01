@@ -313,7 +313,25 @@ The counters live in KV rather than Cloudflare's native rate-limit binding, beca
 
 ### CORS
 
-Allowed front-end addresses are in `wrangler.jsonc` → `vars.ALLOWED_ORIGINS`. Add your new domain there when the front end moves.
+Allowed front-end addresses are in `wrangler.jsonc` → `vars.ALLOWED_ORIGINS`:
+
+| Origin | What it is |
+|---|---|
+| `http://localhost:3000` | the dev server — which is why aylayoo-web pins that port |
+| `http://localhost:5173` | a Vite dev server, kept from the original setup |
+| `https://ayalyoo-web.vercel.app` | the earlier Vercel deployment. Note it reads **ayalyoo**, which is how that project is actually named — not a typo to fix |
+| `https://aylayoo-web.sbolorsaikhan4.workers.dev` | the current front end, on Cloudflare |
+
+A browser calling from anywhere else gets no CORS header and the request fails. **Editing this
+list does nothing until the service is redeployed** — `bunx nx run aylayoo-service:deploy` —
+because it is a Worker var baked in at deploy time.
+
+### The front end
+
+[aylayoo-web](../aylayoo-web/README.md) is the site this API serves. It deploys to Cloudflare
+Workers too, with OpenNext. One cross-service trap worth knowing: its `NEXT_PUBLIC_API_URL` is
+compiled into its client bundle at **build** time, so pointing it at a different API means
+rebuilding it, not reconfiguring it.
 
 ---
 

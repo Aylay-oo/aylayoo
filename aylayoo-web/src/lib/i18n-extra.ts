@@ -45,7 +45,6 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Бид шалгаад 24 цагийн дотор тантай холбогдоно.': 'We will review it and contact you within 24 hours.',
   'Та хэн бэ?': 'Who are you?',
   'Аяллын хөтөч': 'Tour guide',
-  'Нэр': 'Name',
   'Байгууллагын нэр': 'Company name',
   'Утас': 'Phone',
   'Имэйл': 'Email',
@@ -71,15 +70,12 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Дор хаяж нэг аяллын төрөл сонгоно уу': 'Choose at least one trip type',
   'Жолооч бол машинаа бичнэ үү': 'Drivers must say which car they drive',
 
-  /* ---- language names, for the guide cards and the registration form ---- */
-  Монгол: 'Mongolian',
-  Англи: 'English',
-  Орос: 'Russian',
-  Хятад: 'Chinese',
-  Япон: 'Japanese',
-  Солонгос: 'Korean',
-  Франц: 'French',
-  Герман: 'German',
+  /* ---- language names ----
+   * Only the two the design's dictionary lacks. The other eight (Монгол, Англи, Орос, Хятад,
+   * Япон, Солонгос, Франц, Герман) are already in I18N_EN with identical values, and
+   * repeating them here made the bundler fold both objects into one literal with duplicate
+   * keys — harmless, since I18N_EN wins either way, but noise in the build and two places to
+   * change one string. */
   Испани: 'Spanish',
   Итали: 'Italian',
 };

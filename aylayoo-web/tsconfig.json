@@ -1,34 +1,51 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "// why no extends": "goal-tracker-web extends ../../../tsconfig.base.json. This app does not, because it is also checked out on its own in the Aylay-oo team's repo, where that path points above the repo root. The settings the base provided are inlined below; its `paths` entries were all for workspace libraries this app does not import.",
   "compilerOptions": {
-    "jsx": "preserve",
-
+    "jsx": "react-jsx",
+    "target": "es2024",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolvePackageJsonImports": true,
+    "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "emitDeclarationOnly": false,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "types": ["jest", "node"],
-    "plugins": [{ "name": "next" }]
+    "types": [
+      "jest",
+      "node"
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
     "**/*.jsx",
-
-    "../../../apps/aylayoo/aylayoo-web/.next/types/**/*.ts",
-    "../../../dist/apps/aylayoo/aylayoo-web/.next/types/**/*.ts",
-
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
     "next-env.d.ts"
   ],
-  "exclude": ["node_modules", ".next", "scripts"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".open-next",
+    "dist",
+    "scripts"
+  ]
 }

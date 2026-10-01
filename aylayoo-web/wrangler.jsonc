@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aylayoo-web",
+
+  "main": ".open-next/worker.js",
+
+  "compatibility_date": "2026-06-22",
+
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+
+  // NEXT_PUBLIC_API_URL is deliberately NOT a var here. It is inlined into the client bundle
+  // by `next build`, so it has to be in the environment at build time — a Worker var would
+  // arrive far too late to matter. See the README's deploy section.
+}

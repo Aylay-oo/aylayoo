@@ -5,8 +5,12 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "dev": { "port": 4003 },
+  // Browsers may call the API from these origins and no others. The front end now lives on
+  // the workers.dev address; localhost:3000 is the dev server (which is why that port is
+  // pinned), and the .vercel.app entry is the old deployment, kept deliberately — note it
+  // reads "ayalyoo", which is how that project is actually named.
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:5173,https://ayalyoo-web.vercel.app"
+    "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:5173,https://ayalyoo-web.vercel.app,https://aylayoo-web.sbolorsaikhan4.workers.dev"
   },
   "d1_databases": [
     {

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ApiError, type Aimag } from '../../lib/api';
+import { ApiError, registerGuide as registerGuideImpl, type Aimag } from '../../lib/api';
 import { DialogsProvider, useDialogs } from '../../lib/dialogs';
 import { LangProvider } from '../../lib/i18n';
 import { RegisterDialog } from './RegisterDialog';
@@ -9,7 +9,8 @@ jest.mock('../../lib/api', () => {
   const actual = jest.requireActual('../../lib/api');
   return { ...actual, registerGuide: jest.fn() };
 });
-const { registerGuide } = require('../../lib/api') as { registerGuide: jest.Mock };
+// jest.mock above is hoisted, so this import is already the mock.
+const registerGuide = jest.mocked(registerGuideImpl);
 
 /* Registration is how every real guide gets onto the site, so this form is the one path that
  * cannot be allowed to lose someone's details. The validation mirrors the API's, on purpose:
@@ -251,7 +252,7 @@ describe('after sending', () => {
   it('cannot be submitted twice at once', async () => {
     // Replaced when the mocked request starts, so the test can finish it on demand.
     let release: () => void = () => undefined;
-    registerGuide.mockImplementation(() => new Promise((resolve) => { release = () => resolve({}); }));
+    registerGuide.mockImplementation(() => new Promise((resolve) => { release = () => resolve({ data: { id: 1, status: 'pending' }, message: 'ok' }); }));
     setup();
     fillMinimum();
 

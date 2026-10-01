@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ApiError } from '../../lib/api';
+import { ApiError, sendContact as sendContactImpl } from '../../lib/api';
 import { DialogsProvider, useDialogs, type ContactRequest } from '../../lib/dialogs';
 import { LangProvider } from '../../lib/i18n';
 import { ContactDialog } from './ContactDialog';
@@ -9,7 +9,8 @@ jest.mock('../../lib/api', () => {
   const actual = jest.requireActual('../../lib/api');
   return { ...actual, sendContact: jest.fn() };
 });
-const { sendContact } = require('../../lib/api') as { sendContact: jest.Mock };
+// jest.mock above is hoisted, so this import is already the mock.
+const sendContact = jest.mocked(sendContactImpl);
 
 /* The contact dialog is one of only two things on the site that write to the database, so what
  * it sends matters as much as what it shows. The single "phone or email" field in particular
@@ -183,7 +184,7 @@ describe('after sending', () => {
   it('cannot be submitted twice while the first attempt is in flight', async () => {
     // Replaced when the mocked request starts, so the test can finish it on demand.
     let release: () => void = () => undefined;
-    sendContact.mockImplementation(() => new Promise((resolve) => { release = () => resolve({}); }));
+    sendContact.mockImplementation(() => new Promise((resolve) => { release = () => resolve({ message: 'ok' }); }));
     setup(GUIDE);
     fill();
 

@@ -4,13 +4,18 @@ const createJestConfig = nextJest({
   dir: './',
 });
 
+/* No `preset: '../../../jest.preset.js'`, unlike goal-tracker-web.
+ *
+ * That preset is a passthrough of @nx/jest/preset, and this app is also checked out on its
+ * own in the Aylay-oo team's repo, where neither that path nor @nx/jest exists. `next/jest`
+ * already provides what matters — the SWC transform, CSS and asset stubs, and module
+ * resolution — and every import here is relative, so nothing needed the Nx resolver's path
+ * alias support.
+ */
 const config = {
   displayName: 'aylayoo-web',
-  preset: '../../../jest.preset.js',
-  // Matches goal-tracker-web: `next/jest` already wires up the SWC transform plus CSS and
-  // asset stubs, so no @nx/react jest plugin here.
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  coverageDirectory: '../../../coverage/apps/aylayoo/aylayoo-web',
+  coverageDirectory: 'coverage',
   testEnvironment: 'jsdom',
   // Specs live next to the code they cover.
   testMatch: ['<rootDir>/src/**/*.spec.ts', '<rootDir>/src/**/*.spec.tsx'],
@@ -21,15 +26,4 @@ const config = {
   setupFilesAfterEnv: ['<rootDir>/jest-setup.ts'],
 };
 
-const jestConfig = createJestConfig(config);
-
-module.exports = async () => {
-  const resolved = await jestConfig();
-  // Disable SWC path alias resolution — handled by the Nx jest resolver.
-  for (const value of Object.values(resolved.transform)) {
-    if (Array.isArray(value) && value[1]?.resolvedBaseUrl) {
-      value[1] = { ...value[1], resolvedBaseUrl: undefined };
-    }
-  }
-  return resolved;
-};
+module.exports = createJestConfig(config);
