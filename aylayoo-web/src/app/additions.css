@@ -10,6 +10,24 @@
  * Everything here reuses the design's custom properties, so it follows the same palette.
  * ========================================================================== */
 
+/* ---------- Buttons stripped of their chrome, but not their focus ring ---------- */
+
+/* The aimag chip's name is a button that focuses that aimag. The design styled it with an
+ * inline `all: unset`, which also unsets `outline` — and because an inline style outranks a
+ * stylesheet rule, it silently defeated the global :focus-visible ring. The button stayed
+ * tabbable with nothing to show for it, so a keyboard user could not see where they were.
+ * This resets the same properties by name and leaves outline alone. */
+.a-chip-name {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
 /* ---------- A button that has to look like a link ---------- */
 
 /* The footer's "Хөтчөөр бүртгүүлэх" opens a form rather than navigating, so it is a button;
@@ -186,4 +204,177 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* ============================================================================
+ * Admin screen (/admin)
+ *
+ * Reuses the design's tokens and its existing pieces — .g-card, .badge, .btn, .filters,
+ * .empty, .fld, .found — so the review screen looks like the same site rather than a bare
+ * form. Nothing here is loaded by the public page.
+ * ========================================================================== */
+
+.admin {
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: 60px;
+}
+
+/* ---------- Sign in ---------- */
+
+.admin-login {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.admin-login .dlg {
+  width: 100%;
+  max-width: 380px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+.admin-login-mark {
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.admin-login h3 {
+  font-family: var(--font-h);
+  font-size: 21px;
+  font-weight: 800;
+}
+.admin-login .dlg-actions { justify-content: stretch; }
+.admin-login .dlg-actions .btn { width: 100%; }
+
+/* ---------- Header ---------- */
+
+.admin-head {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+}
+.admin-head .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 68px;
+}
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-h);
+  font-size: 15px;
+  color: var(--muted);
+}
+.admin-brand b { color: var(--ink); font-weight: 800; letter-spacing: .02em; }
+.admin-brand svg { width: 34px; height: 22px; }
+
+.admin-body-wrap { padding-top: 26px; }
+.admin-tabs { justify-content: flex-start; margin-bottom: 22px; }
+.admin-muted { color: var(--muted); font-size: 14px; }
+
+.admin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.admin-refresh { padding: 8px 15px; font-size: 13px; }
+
+/* ---------- Pending registrations ---------- */
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.admin-card { padding: 18px; }
+/* A decided card stays on screen, dimmed, so the reviewer can see what they just did. */
+.admin-card.done { opacity: .62; }
+
+/* A description list, because that is what these rows are: a label and its value. */
+.admin-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+.admin-rows dt { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.admin-rows dd { margin: 0; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.admin-rows a { color: var(--green-d); }
+
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.admin-actions .btn { padding: 9px 16px; font-size: 13.5px; }
+
+.admin-outcome {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: right;
+}
+.admin-outcome.ok { color: var(--green-d); }
+.admin-outcome.no { color: var(--warn); }
+
+/* ---------- Messages ---------- */
+
+.admin-messages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.admin-message {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+.admin-message-top {
+  display: flex;
+  align-items: center;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+}
+.admin-message-top .badge { margin-top: 0; }
+.admin-message-top b { font-size: 15px; }
+.admin-message-top a { color: var(--green-d); }
+.admin-message-top time { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+
+.admin-subject { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.admin-subject b { color: var(--ink); }
+/* Preserved line breaks: these are written as lines, and collapsing them runs the dates and
+ * numbers together. */
+.admin-body {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .admin-head .wrap { height: auto; padding-top: 12px; padding-bottom: 12px; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-rows { grid-template-columns: 1fr; gap: 2px; }
+  .admin-rows dt { margin-top: 8px; }
+  .admin-message-top time { margin-left: 0; width: 100%; }
 }

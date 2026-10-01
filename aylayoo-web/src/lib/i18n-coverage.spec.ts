@@ -15,9 +15,15 @@ import { translate } from './i18n';
 
 const SOURCE_ROOT = join(__dirname, '..');
 
+/* The admin screen is deliberately single-language: it is used by the three people who run
+ * the site, so a language switch there would be furniture nobody needs. It uses no t() at
+ * all, and scanning it only produces noise. */
+const SKIP = ['app/admin'];
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
+    if (SKIP.some((skip) => path.endsWith(skip))) return [];
     if (entry.isDirectory()) return sourceFiles(path);
     if (!/\.tsx?$/.test(entry.name) || entry.name.includes('.spec.')) return [];
     return [path];
@@ -41,8 +47,10 @@ function translatedLiterals(source: string): string[] {
   for (const match of code.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"\s*\)/g)) {
     found.push(match[1]);
   }
-  // <Notice message="…" /> and <LoadingLive label="…" /> translate internally.
-  for (const match of code.matchAll(/(?:message|label)="([^"]+)"/g)) {
+  /* <Notice message="…" /> and <LoadingLive label="…" /> translate internally. The lookbehind
+   * matters: without it this also matched the tail of aria-label="…", which is not translated
+   * by anything and produced false failures. */
+  for (const match of code.matchAll(/(?<![-\w])(?:message|label)="([^"]+)"/g)) {
     found.push(match[1]);
   }
   return found;

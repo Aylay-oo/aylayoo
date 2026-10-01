@@ -24,7 +24,8 @@ const place = (over: Partial<Place> & Pick<Place, 'id' | 'aimagId' | 'nameMn'>):
 
 const guide = (over: Partial<Guide> & Pick<Guide, 'id' | 'name' | 'aimags'>): Guide => ({
   type: 'individual', bioMn: null, bioEn: null, languages: ['mn', 'en'], tripTypes: ['countryside'],
-  phone: '+976 99110000', email: 'a@example.com', photoUrl: null, website: null, createdAt: 0,
+  phone: '+976 99110000', email: 'a@example.com', photoUrl: null, website: null,
+  createdAt: '2026-09-26T18:16:43.000Z',
   experienceYears: 5, routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null,
   rating: null, reviewCount: null, ...over,
 });

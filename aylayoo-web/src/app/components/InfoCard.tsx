@@ -52,11 +52,7 @@ export function InfoCard({
       </div>
       {selected.map((code) => (
         <span className={code === activeCode ? 'a-chip active' : 'a-chip'} key={code}>
-          <button
-            type="button"
-            style={{ all: 'unset', cursor: 'pointer' }}
-            onClick={() => focusAimag(code)}
-          >
+          <button className="a-chip-name" type="button" onClick={() => focusAimag(code)}>
             {nameOf(code)}
           </button>
           <button

@@ -68,7 +68,10 @@ export type Guide = {
   email: string;
   photoUrl: string | null;
   website: string | null;
-  createdAt: number;
+  /* An ISO 8601 string, not a number. The column is a unix timestamp, but drizzle's
+   * `mode: 'timestamp'` hands back a Date and JSON serialises that as a string — verified
+   * against the running Worker. */
+  createdAt: string;
   experienceYears: number | null;
   routeMn: string | null;
   routeEn: string | null;
