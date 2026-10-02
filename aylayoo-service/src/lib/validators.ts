@@ -56,6 +56,23 @@ export const loginSchema = z.object({
 
 export const guideStatusSchema = z.object({ status: z.enum(GUIDE_STATUSES) });
 
+/* What an admin may change about an existing guide.
+ *
+ * Deliberately only these two. The association's roster arrives without aimags or trip types
+ * — it does not record them — so an admin fills them in afterwards, and a guide with no aimag
+ * can never appear in the map's recommendations until they do. Everything else about a guide
+ * belongs to the guide, and is changed by re-registering rather than edited behind their back.
+ *
+ * Both are optional, but sending neither is a no-op request and is refused as such. */
+export const guideAssignmentSchema = z
+  .object({
+    aimagIds: z.array(z.number().int().positive()).max(22).optional(),
+    tripTypes: z.array(z.enum(TRIP_TYPES)).max(TRIP_TYPES.length).optional(),
+  })
+  .refine((v) => v.aimagIds !== undefined || v.tripTypes !== undefined, {
+    message: 'Send aimagIds, tripTypes, or both',
+  });
+
 export const placeSchema = z.object({
   aimagId: z.number().int().positive(),
   nameMn: z.string().trim().min(1).max(200),

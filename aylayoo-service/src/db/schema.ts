@@ -8,11 +8,16 @@ export const GUIDE_STATUSES = ['pending', 'approved', 'rejected'] as const;
 export const TRIP_TYPES = ['city', 'countryside'] as const;
 // "contact" = someone writing to a guide; "booking" = someone ordering a listed trip.
 export const CONTACT_KINDS = ['contact', 'booking'] as const;
+/* How long a guide has worked, as the tourism association records it — a band, not a number.
+ * Kept as a band because that is the truth of the data: turning "4-6 жил" into 5 would be
+ * inventing a fact about a real person. */
+export const EXPERIENCE_RANGES = ['Анхны жил', '1-3 жил', '4-6 жил', '7-9 жил', '10+ жил'] as const;
 
 export type PlaceCategory = (typeof PLACE_CATEGORIES)[number];
 export type GuideType = (typeof GUIDE_TYPES)[number];
 export type TripType = (typeof TRIP_TYPES)[number];
 export type ContactKind = (typeof CONTACT_KINDS)[number];
+export type ExperienceRange = (typeof EXPERIENCE_RANGES)[number];
 
 export const aimags = sqliteTable('aimags', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -73,7 +78,14 @@ export const guides = sqliteTable('guides', {
   website: text('website'),
   status: text('status', { enum: GUIDE_STATUSES }).notNull().default('pending'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  /* The guide's own name as the association lists it: "<father's name> <given name>", e.g.
+   * "Жаргал Содномпил". `name` holds the display form the design uses, "Ж. Содномпил". */
+  fullName: text('full_name'),
   experienceYears: integer('experience_years'),
+  /* Either this or experienceYears, depending on where the guide came from: someone who
+   * registers themselves gives a number, the association's roster gives a band. The card
+   * shows whichever is present. */
+  experienceRange: text('experience_range', { enum: EXPERIENCE_RANGES }),
   routeMn: text('route_mn'), // the places they usually travel, e.g. "Хөвсгөл, Архангай"
   routeEn: text('route_en'),
   car: text('car'), // drivers only, e.g. "Land Cruiser 200 / Delica"

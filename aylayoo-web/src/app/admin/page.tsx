@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { getAimags } from '../../lib/api';
 import { useAdminToken } from '../../lib/use-admin-token';
+import { useResource } from '../../lib/use-resource';
 import { LogoMark } from '../components/icons';
 import { AdminLogin } from './AdminLogin';
+import { ApprovedGuides } from './ApprovedGuides';
 import { Messages } from './Messages';
 import { PendingGuides } from './PendingGuides';
 
@@ -17,11 +20,20 @@ import { PendingGuides } from './PendingGuides';
  * so a language switch would be furniture nobody needs.
  */
 
-type Tab = 'pending' | 'messages';
+type Tab = 'pending' | 'approved' | 'messages';
+
+const TABS: readonly { key: Tab; label: string }[] = [
+  { key: 'pending', label: 'Хүлээгдэж байгаа бүртгэл' },
+  { key: 'approved', label: 'Баталгаажсан хөтчүүд' },
+  { key: 'messages', label: 'Мессежүүд' },
+];
 
 export default function AdminPage() {
   const { token, ready, signIn, signOut } = useAdminToken();
   const [tab, setTab] = useState<Tab>('pending');
+  /* The aimag list is public, so it needs no token — and it is fetched here rather than in the
+   * editor so that opening several guides in turn does not refetch all 22 each time. */
+  const aimags = useResource(getAimags);
 
   // Nothing is drawn until the stored token has been read, so an already-signed-in admin
   // never sees the login form flash past on a reload.
@@ -51,34 +63,40 @@ export default function AdminPage() {
 
       <div className="wrap admin-body-wrap">
         <div className="filters admin-tabs" role="tablist" aria-label="Хэсэг">
-          <button
-            role="tab"
-            type="button"
-            aria-selected={tab === 'pending'}
-            aria-controls="tab-pending"
-            onClick={() => setTab('pending')}
-          >
-            Хүлээгдэж байгаа бүртгэл
-          </button>
-          <button
-            role="tab"
-            type="button"
-            aria-selected={tab === 'messages'}
-            aria-controls="tab-messages"
-            onClick={() => setTab('messages')}
-          >
-            Мессежүүд
-          </button>
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              role="tab"
+              type="button"
+              aria-selected={tab === key}
+              aria-controls={`tab-${key}`}
+              onClick={() => setTab(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {/* Only the visible tab is mounted, so switching away cancels nothing important and
             coming back re-fetches — the point of this screen is to see current state. */}
-        {tab === 'pending' ? (
+        {tab === 'pending' && (
           <section id="tab-pending" role="tabpanel" aria-label="Хүлээгдэж байгаа бүртгэл">
             {/* An expired token cannot be retried, so a 401 signs out rather than erroring. */}
             <PendingGuides token={token} onUnauthorized={signOut} />
           </section>
-        ) : (
+        )}
+
+        {tab === 'approved' && (
+          <section id="tab-approved" role="tabpanel" aria-label="Баталгаажсан хөтчүүд">
+            <ApprovedGuides
+              token={token}
+              aimags={aimags.data ?? []}
+              onUnauthorized={signOut}
+            />
+          </section>
+        )}
+
+        {tab === 'messages' && (
           <section id="tab-messages" role="tabpanel" aria-label="Мессежүүд">
             <Messages token={token} />
           </section>

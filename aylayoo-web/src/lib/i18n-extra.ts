@@ -70,6 +70,15 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Дор хаяж нэг аяллын төрөл сонгоно уу': 'Choose at least one trip type',
   'Жолооч бол машинаа бичнэ үү': 'Drivers must say which car they drive',
 
+  /* ---- experience, as the tourism association records it ----
+   * Bands rather than numbers, because that is what the roster holds; turning "4-6 жил" into
+   * 5 would be inventing a fact about a real person. */
+  'Анхны жил': 'First year',
+  '1-3 жил': '1–3 years',
+  '4-6 жил': '4–6 years',
+  '7-9 жил': '7–9 years',
+  '10+ жил': '10+ years',
+
   /* ---- language names ----
    * Only the two the design's dictionary lacks. The other eight (Монгол, Англи, Орос, Хятад,
    * Япон, Солонгос, Франц, Герман) are already in I18N_EN with identical values, and

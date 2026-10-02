@@ -3,3 +3,7 @@
 node_modules/
 # D1 exports taken before a --remote migration. Real production data: never commit these.
 backups/
+
+# Generated SQL and exports holding real people's contact details — the tourism
+# association's guide roster, among others. Never commit anything from here.
+private/

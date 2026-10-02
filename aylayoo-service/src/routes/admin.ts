@@ -1,13 +1,16 @@
 import { Hono } from 'hono';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../db/client';
-import { admins, contactMessages, facts, guides, places, teamMembers } from '../db/schema';
+import {
+  aimags, admins, contactMessages, facts, guideAimags, guides, places, teamMembers,
+} from '../db/schema';
 import { createToken, requireAdmin } from '../lib/auth';
 import { getFile, parseId, readJson, uploadImage } from '../lib/http';
 import { verifyPassword } from '../lib/password';
 import { rateLimit } from '../lib/rate-limit';
 import {
-  factSchema, guideStatusSchema, loginSchema, placeSchema, teamMemberSchema,
+  factSchema, guideAssignmentSchema, guideStatusSchema, loginSchema, placeSchema,
+  teamMemberSchema,
 } from '../lib/validators';
 import type { AppEnv } from '../types';
 import { attachAimags } from './guides';
@@ -56,6 +59,44 @@ adminRoutes.patch('/guides/:id/status', async (c) => {
     .where(eq(guides.id, id)).returning({ id: guides.id, status: guides.status });
   if (updated.length === 0) return c.json({ error: 'Guide not found' }, 404);
   return c.json({ data: updated[0] });
+});
+
+/* PATCH /api/admin/guides/:id   { aimagIds?: number[], tripTypes?: ("city"|"countryside")[] }
+ *
+ * Fills in what the tourism association's roster does not record. Sending `aimagIds` replaces
+ * the guide's whole set rather than adding to it, so the admin screen can send what the
+ * checkboxes currently show and an unticked aimag actually goes away. */
+adminRoutes.patch('/guides/:id{[0-9]+}', async (c) => {
+  const id = parseId(c.req.param('id'));
+  if (!id) return c.json({ error: 'Invalid id' }, 400);
+  const body = await readJson(c, guideAssignmentSchema);
+  if ('error' in body) return body.error;
+  const { aimagIds, tripTypes } = body.data;
+
+  const db = getDb(c.env.DB);
+  const [guide] = await db.select({ id: guides.id }).from(guides).where(eq(guides.id, id)).limit(1);
+  if (!guide) return c.json({ error: 'Guide not found' }, 404);
+
+  if (aimagIds) {
+    const unique = [...new Set(aimagIds)];
+    if (unique.length > 0) {
+      // Refuse the whole request rather than silently dropping an id that does not exist.
+      const found = await db.select({ id: aimags.id }).from(aimags).where(inArray(aimags.id, unique));
+      if (found.length !== unique.length) return c.json({ error: 'One or more aimags do not exist' }, 400);
+    }
+    await db.delete(guideAimags).where(eq(guideAimags.guideId, id));
+    if (unique.length > 0) {
+      await db.insert(guideAimags).values(unique.map((aimagId) => ({ guideId: id, aimagId })));
+    }
+  }
+
+  if (tripTypes) {
+    await db.update(guides).set({ tripTypes: [...new Set(tripTypes)] }).where(eq(guides.id, id));
+  }
+
+  const rows = await db.select().from(guides).where(eq(guides.id, id)).limit(1);
+  const [updated] = await attachAimags(db, rows);
+  return c.json({ data: updated });
 });
 
 // DELETE /api/admin/guides/:id

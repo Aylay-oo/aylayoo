@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ApiError } from '../../lib/api';
 import {
-  adminLogin, getAdminGuides, getMessages, setGuideStatus,
+  adminLogin, getAdminGuides, getMessages, setGuideAssignment, setGuideStatus,
   type AdminGuide, type ContactMessage,
 } from '../../lib/admin-api';
+import { getAimags, type Aimag } from '../../lib/api';
 import AdminPage from './page';
 
 jest.mock('../../lib/admin-api', () => {
@@ -13,8 +14,14 @@ jest.mock('../../lib/admin-api', () => {
     adminLogin: jest.fn(),
     getAdminGuides: jest.fn(),
     setGuideStatus: jest.fn(),
+    setGuideAssignment: jest.fn(),
     getMessages: jest.fn(),
   };
+});
+
+jest.mock('../../lib/api', () => {
+  const actual = jest.requireActual('../../lib/api');
+  return { ...actual, getAimags: jest.fn() };
 });
 
 // jest.mock above is hoisted, so these imports are already the mocks.
@@ -23,7 +30,10 @@ const api = {
   getAdminGuides: jest.mocked(getAdminGuides),
   setGuideStatus: jest.mocked(setGuideStatus),
   getMessages: jest.mocked(getMessages),
+  setGuideAssignment: jest.mocked(setGuideAssignment),
+  getAimags: jest.mocked(getAimags),
 };
+
 
 /* The admin screen is the only place that can change what the public site shows, so the things
  * pinned here are: the token never outlives the tab, an expired one signs out instead of
@@ -33,7 +43,8 @@ const guide = (over: Partial<AdminGuide> & Pick<AdminGuide, 'id' | 'name'>): Adm
   type: 'individual', status: 'pending', bioMn: null, bioEn: null,
   languages: ['mn', 'en'], tripTypes: ['countryside'], phone: '+976 99110001',
   email: 'a@example.com', photoUrl: null, website: null, createdAt: '2026-09-26T18:16:43.000Z',
-  experienceYears: 6, routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null,
+  fullName: null, experienceYears: 6, experienceRange: null,
+  routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null,
   rating: null, reviewCount: null,
   aimags: [{ id: 1, slug: 'khuvsgul', nameMn: 'Хөвсгөл', nameEn: 'Khövsgöl' }],
   ...over,
@@ -62,6 +73,22 @@ const MESSAGES: ContactMessage[] = [
   },
 ];
 
+const aimag = (id: number, slug: string, nameMn: string): Aimag => ({
+  id, slug, nameMn, nameEn: slug, region: 'khangai', descriptionMn: null, descriptionEn: null,
+  imageUrl: null, isoCode: null, centerMn: null, centerEn: null, areaKm2: null,
+});
+
+const AIMAGS = [aimag(1, 'khuvsgul', 'Хөвсгөл'), aimag(2, 'arkhangai', 'Архангай')];
+
+/* A guide as the tourism association's roster provides them: languages and an experience
+ * band, but no aimags and no trip types, because the roster does not record those. */
+const ROSTER_GUIDE = guide({
+  id: 7, name: 'Ж. Содномпил', status: 'approved',
+  fullName: 'Жаргал Содномпил', languages: ['en', 'ko'],
+  experienceYears: null, experienceRange: '4-6 жил',
+  routeMn: null, routeEn: null, tripTypes: [], aimags: [],
+});
+
 async function signIn() {
   api.adminLogin.mockResolvedValue('tok-123');
   render(<AdminPage />);
@@ -82,9 +109,19 @@ async function signIn() {
 beforeEach(() => {
   // Named individually: the module also re-exports real values (ADMIN_TYPE_LABEL), which
   // have no mockReset.
-  for (const mock of [api.adminLogin, api.getAdminGuides, api.setGuideStatus, api.getMessages]) {
+  for (const mock of [
+    api.adminLogin, api.getAdminGuides, api.setGuideStatus, api.getMessages,
+    api.setGuideAssignment, api.getAimags,
+  ]) {
     mock.mockReset();
   }
+  api.getAimags.mockResolvedValue(AIMAGS);
+  api.setGuideAssignment.mockImplementation(async (_t, _id, input) => ({
+    ...ROSTER_GUIDE,
+    tripTypes: input.tripTypes ?? ROSTER_GUIDE.tripTypes,
+    aimags: AIMAGS.filter((a) => (input.aimagIds ?? []).includes(a.id))
+      .map(({ id, slug, nameMn, nameEn }) => ({ id, slug, nameMn, nameEn })),
+  }));
   api.getAdminGuides.mockResolvedValue([BOLORMAA, DRIVER]);
   api.getMessages.mockResolvedValue(MESSAGES);
   api.setGuideStatus.mockResolvedValue({ data: { id: 1, status: 'approved' } });
@@ -349,5 +386,134 @@ describe('messages', () => {
     await signIn();
     await openMessages();
     expect(screen.getByText('Мессеж одоохондоо алга.')).toBeTruthy();
+  });
+});
+
+
+describe('approved guides', () => {
+  const openApproved = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByRole('tab', { name: 'Баталгаажсан хөтчүүд' }));
+    });
+  };
+
+  const card = () => screen.getByText('Ж. Содномпил').closest('.admin-card') as HTMLElement;
+
+  beforeEach(() => {
+    // The pending tab loads first; the approved tab asks for a different status.
+    api.getAdminGuides.mockImplementation(async (_token, status) =>
+      (status === 'approved' ? [ROSTER_GUIDE] : []));
+  });
+
+  it('asks for the approved ones only when that tab is opened', async () => {
+    await signIn();
+    await waitFor(() => expect(api.getAdminGuides).toHaveBeenCalledWith('tok-123', 'pending'));
+    expect(api.getAdminGuides).not.toHaveBeenCalledWith('tok-123', 'approved');
+
+    await openApproved();
+    expect(api.getAdminGuides).toHaveBeenCalledWith('tok-123', 'approved');
+  });
+
+  it('shows what the roster has and marks what it does not', async () => {
+    await signIn();
+    await openApproved();
+
+    expect(card().textContent).toContain('Англи, Солонгос');
+    expect(card().textContent).toContain('4-6 жил');
+    // The roster has no aimags or trip types, and that is called out rather than left blank.
+    expect(within(card()).getAllByText('заагаагүй')).toHaveLength(2);
+  });
+
+  it('counts the guides the map cannot recommend yet', async () => {
+    // A guide with no aimag shows in the carousel but can never be recommended by the map.
+    await signIn();
+    await openApproved();
+    expect(screen.getByText('1 хөтөчид аймаг заагаагүй')).toBeTruthy();
+  });
+
+  it('leaves out rows it has nothing for', async () => {
+    await signIn();
+    await openApproved();
+    expect(card().textContent).not.toContain('Машин');
+    expect(card().textContent).not.toContain('Чиглэл');
+  });
+
+  it('assigns aimags and trip types', async () => {
+    await signIn();
+    await openApproved();
+
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    fireEvent.click(within(card()).getByRole('button', { name: 'Хөвсгөл' }));
+    fireEvent.click(within(card()).getByRole('button', { name: 'Хөдөөгийн аялал' }));
+    await act(async () => {
+      fireEvent.click(within(card()).getByRole('button', { name: 'Хадгалах' }));
+    });
+
+    expect(api.setGuideAssignment).toHaveBeenCalledWith('tok-123', 7, {
+      aimagIds: [1],
+      tripTypes: ['countryside'],
+    });
+  });
+
+  it('sends the full set, so unticking an aimag removes it', async () => {
+    api.getAdminGuides.mockImplementation(async (_t, status) => (status === 'approved'
+      ? [{ ...ROSTER_GUIDE, aimags: [{ id: 1, slug: 'khuvsgul', nameMn: 'Хөвсгөл', nameEn: 'khuvsgul' }] }]
+      : []));
+    await signIn();
+    await openApproved();
+
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    // Starts ticked, because the guide already has it.
+    expect(within(card()).getByRole('button', { name: 'Хөвсгөл' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(card()).getByRole('button', { name: 'Хөвсгөл' }));
+    await act(async () => {
+      fireEvent.click(within(card()).getByRole('button', { name: 'Хадгалах' }));
+    });
+
+    expect(api.setGuideAssignment).toHaveBeenCalledWith('tok-123', 7, {
+      aimagIds: [],
+      tripTypes: [],
+    });
+  });
+
+  it('cancels without saving', async () => {
+    await signIn();
+    await openApproved();
+
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    fireEvent.click(within(card()).getByRole('button', { name: 'Хөвсгөл' }));
+    fireEvent.click(within(card()).getByRole('button', { name: 'Болих' }));
+
+    expect(api.setGuideAssignment).not.toHaveBeenCalled();
+    // And reopening does not remember the abandoned tick.
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    expect(within(card()).getByRole('button', { name: 'Хөвсгөл' }).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps the editor open and explains a failed save', async () => {
+    api.setGuideAssignment.mockRejectedValue(new ApiError('One or more aimags do not exist'));
+    await signIn();
+    await openApproved();
+
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    await act(async () => {
+      fireEvent.click(within(card()).getByRole('button', { name: 'Хадгалах' }));
+    });
+
+    expect(within(card()).getByRole('alert').textContent).toContain('do not exist');
+    expect(within(card()).getByRole('button', { name: 'Хадгалах' })).toBeTruthy();
+  });
+
+  it('signs out when the token has expired', async () => {
+    api.setGuideAssignment.mockRejectedValue(new ApiError('Unauthorized', 401));
+    await signIn();
+    await openApproved();
+
+    fireEvent.click(within(card()).getByRole('button', { name: 'Аймаг & төрөл засах' }));
+    await act(async () => {
+      fireEvent.click(within(card()).getByRole('button', { name: 'Хадгалах' }));
+    });
+
+    expect(screen.getByRole('heading', { name: 'Админ нэвтрэх' })).toBeTruthy();
   });
 });

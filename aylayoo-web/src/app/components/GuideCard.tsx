@@ -32,6 +32,10 @@ export function GuideCard({ guide, coverage, clone = false }: GuideCardProps) {
 
   const photo = imageUrl(guide.photoUrl);
   const route = pick(guide.routeMn, guide.routeEn);
+  /* The roster records a band ("4-6 жил"); a guide who registers gives a number. Prefer the
+   * band, because that is what was actually recorded about them. */
+  const experience = guide.experienceRange
+    ?? (guide.experienceYears !== null ? experienceLabel(guide.experienceYears) : null);
   /* A driver's card shows the vehicle where a guide's shows languages — the one row that
    * differs by type in the design. */
   const isDriver = guide.type === 'driver';
@@ -87,11 +91,13 @@ export function GuideCard({ guide, coverage, clone = false }: GuideCardProps) {
           )
         )}
 
-        {guide.experienceYears !== null && (
+        {/* A band from the association's roster, or a number from a self-registration.
+            Neither present means the row is left out rather than shown empty. */}
+        {experience && (
           <li>
             <ExperienceIcon />
             <span>
-              <b>{t('Туршлага:')}</b> {t(experienceLabel(guide.experienceYears))}
+              <b>{t('Туршлага:')}</b> {t(experience)}
             </span>
           </li>
         )}

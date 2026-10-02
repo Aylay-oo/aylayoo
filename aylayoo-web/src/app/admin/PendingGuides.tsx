@@ -13,6 +13,12 @@ import { useResource } from '../../lib/use-resource';
  * languages, phone and email — because the alternative is approving people on faith.
  */
 
+/** The band from the roster, or the number from a self-registration, or nothing. */
+export function experienceOf(guide: AdminGuide): string | null {
+  if (guide.experienceRange) return guide.experienceRange;
+  return guide.experienceYears !== null ? `${guide.experienceYears} жил` : null;
+}
+
 export function PendingGuides({
   token, onUnauthorized,
 }: { token: string; onUnauthorized: () => void }) {
@@ -110,27 +116,36 @@ export function PendingGuides({
                   <dt>Имэйл</dt>
                   <dd><a href={`mailto:${guide.email}`}>{guide.email}</a></dd>
 
-                  {guide.type === 'driver' ? (
+                  {/* Rows with nothing in them are left out rather than printed with a
+                      dash: the association's roster has no aimags, trip types, route, bio or
+                      photo, so half of these would otherwise be empty labels on every card. */}
+                  {guide.type === 'driver' && guide.car && (
                     <>
                       <dt>Машин</dt>
-                      <dd>{guide.car || '—'}</dd>
-                    </>
-                  ) : (
-                    <>
-                      <dt>Хэл</dt>
-                      <dd>{guide.languages.length ? languageLabel(guide.languages) : '—'}</dd>
+                      <dd>{guide.car}</dd>
                     </>
                   )}
 
-                  <dt>Аймгууд</dt>
-                  <dd>
-                    {guide.aimags.length
-                      ? guide.aimags.map((aimag) => aimag.nameMn).join(', ')
-                      : '—'}
-                  </dd>
+                  {guide.type !== 'driver' && guide.languages.length > 0 && (
+                    <>
+                      <dt>Хэл</dt>
+                      <dd>{languageLabel(guide.languages)}</dd>
+                    </>
+                  )}
 
-                  <dt>Туршлага</dt>
-                  <dd>{guide.experienceYears !== null ? `${guide.experienceYears} жил` : '—'}</dd>
+                  {guide.aimags.length > 0 && (
+                    <>
+                      <dt>Аймгууд</dt>
+                      <dd>{guide.aimags.map((aimag) => aimag.nameMn).join(', ')}</dd>
+                    </>
+                  )}
+
+                  {experienceOf(guide) && (
+                    <>
+                      <dt>Туршлага</dt>
+                      <dd>{experienceOf(guide)}</dd>
+                    </>
+                  )}
 
                   {guide.routeMn && (
                     <>

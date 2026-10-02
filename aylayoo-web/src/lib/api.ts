@@ -72,7 +72,13 @@ export type Guide = {
    * `mode: 'timestamp'` hands back a Date and JSON serialises that as a string — verified
    * against the running Worker. */
   createdAt: string;
+  /** The guide's name as the tourism association lists it, father's name spelled out in
+   *  full. `name` is the display form the design uses, "Ж. Содномпил". */
+  fullName: string | null;
+  /** Either this or experienceYears, never both: someone who registers themselves gives a
+   *  number, the association's roster gives a band like "4-6 жил". */
   experienceYears: number | null;
+  experienceRange: string | null;
   routeMn: string | null;
   routeEn: string | null;
   car: string | null;

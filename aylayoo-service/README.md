@@ -120,6 +120,7 @@ Whenever you change `src/db/schema.ts` later: run `drizzle-kit generate` again, 
 | File | What it does |
 |---|---|
 | `0000_daily_charles_xavier.sql` | the original 8 tables |
+| `0002_same_impossible_man.sql` | `guides.full_name` and `guides.experience_range`. The tourism association's roster records experience as a band ("4-6 жил"), not a number, so it gets its own column rather than being forced into `experience_years` — turning a band into a number would invent a fact about a real person. A guide has one or the other, never both. |
 | `0001_great_leper_queen.sql` | everything the front-end design needs: `driver` guide type support (`experience_years`, `route_mn/en`, `car`, nullable `rating`/`review_count`), aimag `iso_code`/`center_mn/en`/`area_km2`, place `image_key`/`best_months_*`/`must_title_*`/`must_summary_*` and **nullable `lat`/`lng`**, team `name_en`/`role_en`/`school_*`/`description_*`, and contact `phone`/`guide_id`/`subject`/`kind` with **nullable `email`**. Rebuilds `places` and `contact_messages`. |
 
 ### Seeds
@@ -127,7 +128,41 @@ Whenever you change `src/db/schema.ts` later: run `drizzle-kit generate` again, 
 | File | Where it may run |
 |---|---|
 | `seed/seed.sql` | **`--local` only.** Deletes every row first, then loads the 22 aimags, all 67 places from the design and 10 *demo* guides with mock ratings, so a fresh local database looks like the mockup. Running this against production would destroy real data. |
+| `private/prod-guides-import.sql` | **Generated, never committed.** The 50 guides from the Mongolian tourism association, holding real phone numbers and email addresses — which is why `private/` is gitignored. Build it with `node scripts/build-guide-import.mjs "<path to the xlsx>"`. Idempotent: each insert is guarded on the email address. |
 | `seed/prod-2026-09-26-design-import.sql` | The reviewed production import: backfills the aimags, updates the 12 existing places to the design's text, inserts the other 55, narrows must-see to the design's 6, installs the 4 real team members and deletes the pre-launch `(sample)` guides. Never deletes a place or a real guide, and every insert is guarded so a second run is a no-op. |
+
+### The tourism association's guide roster
+
+50 professional guides, shared with the association's approval. They are imported as
+`type = 'individual'`, `status = 'approved'` — listed rather than queued, since the sharing is
+already approved.
+
+```bash
+node scripts/build-guide-import.mjs "~/Downloads/mto_hotch_50 (1).xlsx"
+bunx wrangler d1 execute aylayoo-db --local --file=private/prod-guides-import.sql
+```
+
+The script reads five columns — `Овог Нэр`, `Утасны дугаар`, `И-мэйл`, `Мэддэг хэл`,
+`Ажилласан хугацаа` — and stops if any of their headings has moved. The sheet's
+`Имэйл явуулсан`, `Хариу` and `Gmail thread ID` columns are the association's internal
+correspondence notes and never reach the database.
+
+What it does with the data:
+
+| | |
+|---|---|
+| Name | `Мөнхгэрэл Амартүвшин` → `name` = `М. Амартүвшин` (the design's form), `full_name` = the whole thing |
+| Languages | Mongolian names → codes; a row with `Англи, Солонгос` becomes `["en","ko"]` |
+| Experience | the band as written, in `experience_range`; `experience_years` stays NULL |
+| Phone | as given, 8 digits |
+| Rating | NULL, like every guide — ratings are earned from real travellers |
+
+**Left empty, because the roster does not have it:** aimags, trip types, route, bio, photo. A
+guide with no aimag appears in the site's carousel but can never be recommended by the map,
+which matches on province — fill those in on `/admin` → Баталгаажсан хөтчүүд.
+
+> `seed/seed.sql` deletes every guide before inserting its ten demo ones. Re-running it on a
+> local database therefore wipes the roster; re-run the import above afterwards.
 
 Before any `--remote` migration, take a backup first:
 
@@ -284,6 +319,7 @@ await fetch(`${API_URL}/api/guides/register`, { method: 'POST', body: form });
 | POST | `/api/admin/login` | `{ email, password }` → `{ token }` (valid 8 hours) |
 | GET | `/api/admin/guides?status=pending` | pending/approved/rejected |
 | PATCH | `/api/admin/guides/:id/status` | `{ "status": "approved" }` |
+| PATCH | `/api/admin/guides/:id` | `{ aimagIds?: number[], tripTypes?: ("city"\|"countryside")[] }` — fills in what the association's roster does not record. `aimagIds` **replaces** the guide's whole set, so the admin screen can send what its checkboxes show and an unticked aimag really goes away. Sending neither field is refused. |
 | DELETE | `/api/admin/guides/:id` | |
 | POST / PUT / DELETE | `/api/admin/places[/:id]` | create / update / delete places |
 | POST / PUT / DELETE | `/api/admin/facts[/:id]` | |

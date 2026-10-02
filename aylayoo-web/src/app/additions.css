@@ -415,3 +415,13 @@
   .admin-rows dt { margin-top: 8px; }
   .admin-message-top time { margin-left: 0; width: 100%; }
 }
+
+/* The aimag and trip-type editor on an approved guide. */
+.admin-edit { padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-edit .fld { margin-bottom: 6px; }
+.admin-edit .pick.scroll { max-height: 140px; }
+.admin-edit .admin-actions { border-top: 0; padding-top: 4px; }
+
+/* Something the roster does not record and nobody has filled in yet. Muted and italic, so a
+ * scan down the column finds the gaps. */
+.admin-unset { color: var(--muted); font-style: italic; }

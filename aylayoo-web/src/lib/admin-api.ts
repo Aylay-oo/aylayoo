@@ -83,6 +83,19 @@ export const getAdminGuides = (token: AdminToken, status: 'pending' | 'approved'
   adminRequest<{ data: AdminGuide[] }>(`/api/admin/guides?status=${status}`, token)
     .then((r) => r.data);
 
+/* Fills in what the tourism association's roster does not record. `aimagIds` REPLACES the
+ * guide's whole set, so the editor can send what its checkboxes show and an unticked aimag
+ * actually goes away. Either field may be sent alone. */
+export const setGuideAssignment = (
+  token: AdminToken,
+  id: number,
+  input: { aimagIds?: number[]; tripTypes?: ('city' | 'countryside')[] },
+) => adminRequest<{ data: AdminGuide }>(
+  `/api/admin/guides/${id}`,
+  token,
+  { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) },
+).then((r) => r.data);
+
 export const setGuideStatus = (
   token: AdminToken,
   id: number,

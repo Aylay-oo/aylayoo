@@ -18,6 +18,9 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
+      /* This app is App Router only, so there is no `pages` directory for the rule to scan
+       * and it warns on every run looking for one. */
+      '@next/next/no-html-link-for-pages': 'off',
     },
   },
   // Only in the monorepo; absent in the standalone checkout.

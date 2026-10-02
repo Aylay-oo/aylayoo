@@ -13,7 +13,8 @@ import { GuidesSection } from './GuidesSection';
 const guide = (id: number, name: string, type: GuideType = 'individual'): Guide => ({
   id, name, type, bioMn: null, bioEn: null, languages: ['mn', 'en'],
   tripTypes: ['countryside'], phone: '+976 99110000', email: `g${id}@example.com`,
-  photoUrl: null, website: null, createdAt: '2026-09-26T18:16:43.000Z', experienceYears: 5,
+  photoUrl: null, website: null, createdAt: '2026-09-26T18:16:43.000Z',
+  fullName: null, experienceYears: 5, experienceRange: null,
   routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: type === 'driver' ? 'Delica' : null,
   rating: null, reviewCount: null, aimags: [],
 });
@@ -245,5 +246,71 @@ describe('states', () => {
     expect(screen.queryByRole('heading', { name: 'Хөтчүүд удахгүй нэмэгдэнэ' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Дахин оролдох' }));
     expect(reload).toHaveBeenCalled();
+  });
+});
+
+describe('a guide from the tourism association roster', () => {
+  /* The roster records languages and an experience band, and nothing else — no aimags, trip
+   * types, route, bio or photo. The card has to read as complete anyway. */
+  const ROSTER = guide(1, 'Ж. Содномпил');
+  const rosterGuide = {
+    ...ROSTER,
+    fullName: 'Жаргал Содномпил',
+    languages: ['en', 'ko'],
+    experienceYears: null,
+    experienceRange: '4-6 жил',
+    routeMn: null,
+    routeEn: null,
+    tripTypes: [] as ('city' | 'countryside')[],
+    aimags: [],
+  };
+
+  it('shows the experience band as recorded, not a made-up number', () => {
+    setup(resource([rosterGuide]));
+    const card = cards()[0];
+    expect(card.textContent).toContain('Туршлага:');
+    expect(card.textContent).toContain('4-6 жил');
+  });
+
+  it('shows the languages it does have', () => {
+    setup(resource([rosterGuide]));
+    expect(cards()[0].textContent).toContain('Англи, Солонгос');
+  });
+
+  it('leaves out the rows it has nothing for, rather than showing empty labels', () => {
+    setup(resource([rosterGuide]));
+    const card = cards()[0];
+    expect(card.textContent).not.toContain('Чиглэл:');
+    expect(card.textContent).not.toContain('Машин:');
+    // And no stars, since rating is null.
+    expect(card.textContent).not.toContain('★');
+  });
+
+  it('uses the initials avatar when there is no photo', () => {
+    setup(resource([rosterGuide]));
+    const avatar = cards()[0].querySelector('.g-av');
+    expect(avatar?.textContent).toBe('ЖС');
+    expect(cards()[0].querySelector('img')).toBeNull();
+  });
+
+  it('translates the band into English', () => {
+    render(
+      <LangProvider>
+        <TravelStateProvider>
+          <DialogsProvider>
+            <LangSwitch to="en" />
+            <GuidesSection guides={resource([rosterGuide])} />
+          </DialogsProvider>
+        </TravelStateProvider>
+      </LangProvider>,
+    );
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'switch' })); });
+    expect(document.body.textContent).toContain('4–6 years');
+    expect(document.body.textContent).toContain('English, Korean');
+  });
+
+  it('still prefers an explicit year count when a self-registered guide has one', () => {
+    setup(resource([{ ...rosterGuide, experienceYears: 6, experienceRange: null }]));
+    expect(cards()[0].textContent).toContain('6 жил');
   });
 });

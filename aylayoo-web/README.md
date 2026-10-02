@@ -118,7 +118,15 @@ A review screen at `/admin`, deliberately **not linked from the public site** an
 
 - **Хүлээгдэж байгаа бүртгэл** — pending registrations with Approve / Reject, showing each
   applicant's photo, type, provinces, languages, phone and email.
+- **Баталгаажсан хөтчүүд** — the approved guides, each with an **Аймаг & төрөл засах** button
+  for assigning provinces and trip types. This exists because the tourism association's
+  roster of 50 guides records neither: a guide with no province appears in the site's
+  carousel but can never be recommended by the map, which matches on province. The header
+  counts how many are still unassigned.
 - **Мессежүүд** — contact and booking messages, newest first.
+
+Rows with nothing in them are left out rather than printed with a dash, since the roster
+leaves most fields empty and the cards would otherwise be mostly blank labels.
 
 The token lives in `sessionStorage`: it dies with the tab, rather than leaving an 8-hour
 credential on a shared machine. A 401 signs out instead of showing an error, because an
