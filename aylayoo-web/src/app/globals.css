@@ -94,10 +94,11 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
 @media (max-width:560px){.h-tools .btn-ghost{display:none}.logo small{display:none}}
 
 /* ---------- Hero ---------- */
-/* The 20px is what the row of quick links under the hero used to contribute to the gap
- * before #where (margin-top:-8px + padding-bottom:28px). The wave is already the page
- * background's colour, so this reads as part of it. */
-.hero{position:relative;margin-bottom:20px;min-height:600px;display:flex;align-items:center;overflow:hidden;color:#fff;isolation:isolate}
+/* Tall enough to read as a photo band, short enough that the headline and paragraph are not
+ * marooned in it: ~70vh, floored so a short laptop window still gets a hero and capped so a
+ * tall monitor does not get a whole screenful. No bottom margin — #where's own 84px of top
+ * padding is the gap, and anything here on top of it reads as an empty green stripe. */
+.hero{position:relative;min-height:clamp(480px,70vh,680px);display:flex;align-items:center;overflow:hidden;color:#fff;isolation:isolate}
 .hero{background:#2B4A36}
 .hero-slides{position:absolute;inset:0;z-index:-2;overflow:hidden}
 .hero-slide{position:absolute;inset:-2%;background-size:cover;background-position:center;opacity:0;will-change:opacity,transform;animation:heroDissolve 28s linear infinite}
@@ -111,7 +112,10 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
   100%{opacity:0;transform:scale(1.02) translateX(-1.5%)}}
 @media (prefers-reduced-motion:reduce){.hero-slide{animation:none}.hero-slide:not(:first-child){display:none}}
 .hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(8,30,18,.66) 0%,rgba(8,30,18,.38) 45%,rgba(8,30,18,.08) 75%),linear-gradient(0deg,rgba(8,30,18,.35),transparent 35%)}
-.hero .wrap{width:100%;padding-top:72px;padding-bottom:96px}
+/* 64px of breathing room on both sides of the text, plus the 70px the wave covers at the
+ * bottom. align-items:center then puts the text in the middle of the photo you can actually
+ * see rather than the middle of the box, which the wave eats the bottom of. */
+.hero .wrap{width:100%;padding-top:64px;padding-bottom:134px}
 .hero h1{font-weight:800;font-size:clamp(36px,5.6vw,66px);text-transform:uppercase;letter-spacing:.005em;line-height:1.02;max-width:12ch;text-shadow:0 2px 24px rgba(0,0,0,.25)}
 .hero p{max-width:52ch;font-size:16.5px;margin:22px 0 30px;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.3)}
 /* The headline cycles one phrase at a time (see HeroHeadline.tsx). The box is exactly one
@@ -135,8 +139,10 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
  * wave exactly 1440px wide and the photo showing past its right end above 1440px. */
 .hero-wave{position:absolute;left:0;right:0;bottom:-1px;display:block;width:100%;height:70px;z-index:0;color:var(--bg)}
 @media (max-width:760px){
+  /* Content-driven on a phone, where 70vh of photo would push the rest of the page off the
+     screen and the paragraph is five lines rather than three. */
   .hero{min-height:auto}
-  .hero .wrap{padding-top:44px;padding-bottom:84px}
+  .hero .wrap{padding-top:40px;padding-bottom:110px}
 }
 
 /* ---------- Sections ---------- */
@@ -168,7 +174,21 @@ section.block{padding:84px 0}
 .map-svg path.center{fill:var(--r-center)} .map-svg path.east{fill:var(--r-east)}
 .map-svg path.cap{fill:var(--r-cap)}
 .map-svg path.sel{fill:var(--sel)!important}
-.map-svg path:focus-visible{outline:none;filter:drop-shadow(0 0 0 var(--ink)) brightness(.85)}
+/* No outline in any focus state. A UA focus ring on an SVG path is a rectangle around its
+ * bounding box, which has nothing to do with the shape of an aimag and looks like a bug; the
+ * ring below follows the real border instead. :focus as well as :focus-visible, because
+ * browsers disagree about which one a clicked path gets. */
+.map-svg path,.map-svg path:focus,.map-svg path:focus-visible{outline:none}
+
+/* The highlights MongoliaMap.tsx draws over every shape, so a neighbour cannot cover them.
+ * None of them is clickable: the aimag underneath still takes the click. */
+.map-svg path.map-outline,.map-svg path.map-focus-halo,.map-svg path.map-focus-ring{fill:none;pointer-events:none;cursor:default;transition:none}
+/* The selected-and-focused aimag's border, which used to be a stroke on the shape itself. */
+.map-svg path.map-outline{stroke:var(--ink);stroke-width:2.4}
+/* Keyboard focus: a white halo carrying a dark ring, legible on the pale region fills and on
+ * the capital's near-black one alike. */
+.map-svg path.map-focus-halo{stroke:#fff;stroke-width:6;stroke-linejoin:round}
+.map-svg path.map-focus-ring{stroke:var(--ink);stroke-width:3;stroke-linejoin:round}
 .map-svg text{font:700 13px var(--font-b);fill:#1D2A23;pointer-events:none;text-anchor:middle;dominant-baseline:middle}
 .map-svg text.tiny{font-size:9.5px}
 .map-svg text.on{fill:#fff}
@@ -371,7 +391,6 @@ footer a:hover{text-decoration:underline}
 .a-chip.active{background:var(--green);border-color:var(--green);color:#fff}
 .a-chip .x{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.08);font-size:12px;line-height:1}
 .a-chip.active .x{background:rgba(255,255,255,.25)}
-.map-svg path.sel.active{stroke:var(--ink);stroke-width:2.4}
 .cl-group + .cl-group{margin-top:22px}
 .cl-group h5{font:800 15px var(--font-h);margin:0 0 10px;display:flex;align-items:center;gap:8px}
 .cl-group h5 i{width:9px;height:9px;border-radius:50%;display:block}

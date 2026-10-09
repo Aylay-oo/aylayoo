@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Aimag } from '../../lib/api';
 import { useLang } from '../../lib/i18n';
 import {
@@ -18,6 +18,11 @@ import { useTravelState } from '../../lib/travel-state';
  * Each shape is a real button as far as assistive technology is concerned: role="button",
  * tabIndex 0, aria-pressed for its selected state, and Enter or Space to toggle — which is
  * what the design's keydown handler did.
+ *
+ * Focus is tracked here rather than left to CSS :focus-visible, for two reasons. Chrome
+ * matches :focus-visible on a path with tabindex even when it was clicked with a mouse, so
+ * a CSS-only ring would appear on every click; and a ring has to be drawn as an overlay
+ * anyway (see below), which needs to know in React which shape has it.
  */
 
 const UB_CODE = 'MN-1';
@@ -25,6 +30,12 @@ const UB_CODE = 'MN-1';
 export function MongoliaMap({ aimags }: { aimags: Aimag[] }) {
   const { t, pick } = useLang();
   const { isSelected, activeCode, toggleAimag } = useTravelState();
+  /** The aimag showing a keyboard focus ring, or null when focus came from a pointer. */
+  const [focusedCode, setFocusedCode] = useState<string | null>(null);
+  /* Set by the pointer press that is about to move focus, so the focus handler can tell a
+   * click from a Tab. A ref, not state: it must be readable in the very next event, and it
+   * changes nothing on screen by itself. */
+  const pointerFocus = useRef(false);
 
   /** ISO code → the aimag row, so each shape can find its name and region. */
   const byCode = useMemo(() => {
@@ -38,6 +49,13 @@ export function MongoliaMap({ aimags }: { aimags: Aimag[] }) {
   }, [aimags]);
 
   const ub = PATHS[UB_CODE].c;
+
+  /* The two highlights are drawn after every shape, because an SVG paints in document order:
+   * a neighbouring aimag drawn later covers the stroke along their shared border, which is
+   * what hid the selected aimag's outline on some of its sides. */
+  const outlined = activeCode && isSelected(activeCode) && byCode.has(activeCode)
+    ? PATHS[activeCode]?.d : undefined;
+  const ringed = focusedCode && byCode.has(focusedCode) ? PATHS[focusedCode]?.d : undefined;
 
   return (
     <svg
@@ -73,6 +91,17 @@ export function MongoliaMap({ aimags }: { aimags: Aimag[] }) {
             aria-pressed={selected}
             aria-label={name}
             onClick={() => toggleAimag(code)}
+            onPointerDown={() => {
+              pointerFocus.current = true;
+              setFocusedCode(null);
+            }}
+            onFocus={() => {
+              // A click gets the selected styling and nothing more; only a keyboard arrival
+              // earns a ring.
+              if (!pointerFocus.current) setFocusedCode(code);
+              pointerFocus.current = false;
+            }}
+            onBlur={() => setFocusedCode(null)}
             onKeyDown={(event) => {
               if (event.key !== 'Enter' && event.key !== ' ') return;
               // Space would otherwise scroll the page out from under the map.
@@ -87,6 +116,19 @@ export function MongoliaMap({ aimags }: { aimags: Aimag[] }) {
 
       {/* The capital's dot sits above the shapes and below the labels, as in the design. */}
       <circle className="ub-dot" cx={ub[0]} cy={ub[1]} r={5} />
+
+      {/* Neither highlight takes pointer events, so the shape underneath still gets the
+          click, and neither is announced — the state they draw is already on the shape as
+          aria-pressed and as the focus itself. */}
+      {outlined && <path className="map-outline" d={outlined} aria-hidden="true" />}
+      {ringed && (
+        <>
+          {/* A white halo under a dark ring, so focus is legible both on the pale region
+              fills and on the capital's near-black one. */}
+          <path className="map-focus-halo" d={ringed} aria-hidden="true" />
+          <path className="map-focus-ring" d={ringed} aria-hidden="true" />
+        </>
+      )}
 
       {Object.entries(PATHS).map(([code, shape]) => {
         const aimag = byCode.get(code);

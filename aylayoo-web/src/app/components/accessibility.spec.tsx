@@ -3,6 +3,7 @@ import type { Aimag, Guide, Place, TeamMember } from '../../lib/api';
 import { DialogsProvider } from '../../lib/dialogs';
 import { LangProvider } from '../../lib/i18n';
 import { TravelStateProvider } from '../../lib/travel-state';
+import { PATHS } from '../../lib/static-data';
 import type { Resource } from '../../lib/use-resource';
 import { Footer } from './Footer';
 import { SkipLink } from './SkipLink';
@@ -216,6 +217,81 @@ describe('keyboard operation', () => {
     const chipName = document.querySelector('.a-chip .a-chip-name') as HTMLElement;
     expect(chipName).toBeTruthy();
     expect(chipName.getAttribute('style')).toBeNull();
+  });
+
+  /* The map's shapes are the one place a focus ring had to be built by hand. A browser draws
+   * one around an SVG path's bounding box — a rectangle with no relation to the aimag — so
+   * the outline is off and a ring following the real border is drawn instead. */
+  describe('the map shows keyboard focus on the shape itself', () => {
+    const mapSvg = () => document.querySelector('.map-svg') as HTMLElement;
+    const aimag = (name: string) => within(mapSvg()).getByRole('button', { name });
+    const ring = () => mapSvg().querySelector('.map-focus-ring');
+
+    it('rings the aimag that keyboard focus reaches, along its own border', () => {
+      renderPage();
+      fireEvent.focus(aimag('Хөвсгөл'));
+
+      // The ring is the aimag's own outline, not a box around it.
+      expect(ring()?.getAttribute('d')).toBe(PATHS['MN-041'].d);
+      // And it is backed by a white halo, so it reads on a dark fill too.
+      expect(mapSvg().querySelector('.map-focus-halo')?.getAttribute('d')).toBe(PATHS['MN-041'].d);
+    });
+
+    it('draws the ring after every shape, so no neighbour can cover it', () => {
+      /* An SVG paints in document order: a ring drawn with its own shape would be painted
+       * over along every border it shares with an aimag that comes later. */
+      renderPage();
+      fireEvent.focus(aimag('Хөвсгөл'));
+
+      const paths = [...mapSvg().querySelectorAll('path')];
+      const lastShape = paths.map((el) => el.getAttribute('role')).lastIndexOf('button');
+      expect(paths.findIndex((el) => el.classList.contains('map-focus-ring')))
+        .toBeGreaterThan(lastShape);
+    });
+
+    it('shows no ring when the aimag was clicked rather than tabbed to', () => {
+      renderPage();
+      const khuvsgul = aimag('Хөвсгөл');
+      fireEvent.pointerDown(khuvsgul);
+      fireEvent.focus(khuvsgul);
+      fireEvent.click(khuvsgul);
+
+      expect(ring()).toBeNull();
+      // The click still did its job; it just did not leave a focus mark behind.
+      expect(khuvsgul.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('drops the ring again when focus leaves', () => {
+      renderPage();
+      fireEvent.focus(aimag('Хөвсгөл'));
+      expect(ring()).toBeTruthy();
+
+      fireEvent.blur(aimag('Хөвсгөл'));
+      expect(ring()).toBeNull();
+    });
+
+    it('keeps the selected aimag\'s border above its neighbours too', () => {
+      // Bayankhongor starts selected, and its border used to disappear where a neighbour
+      // drawn later painted over their shared edge.
+      renderPage();
+      const outline = mapSvg().querySelector('.map-outline');
+      expect(outline?.getAttribute('d')).toBe(PATHS['MN-069'].d);
+
+      const paths = [...mapSvg().querySelectorAll('path')];
+      const lastShape = paths.map((el) => el.getAttribute('role')).lastIndexOf('button');
+      expect(paths.findIndex((el) => el.classList.contains('map-outline'))).toBeGreaterThan(lastShape);
+    });
+
+    it('leaves the highlights out of the tab order and the accessibility tree', () => {
+      renderPage();
+      fireEvent.focus(aimag('Хөвсгөл'));
+
+      for (const el of mapSvg().querySelectorAll('.map-outline, .map-focus-halo, .map-focus-ring')) {
+        expect(el.getAttribute('aria-hidden')).toBe('true');
+        expect(el.getAttribute('role')).toBeNull();
+        expect(el.getAttribute('tabindex')).toBeNull();
+      }
+    });
   });
 
   it('gives the tile slideshows a focusable handle', () => {
