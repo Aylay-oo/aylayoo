@@ -51,6 +51,12 @@ describe('translate', () => {
       ['4.9 · 128 үнэлгээ', '4.9 · 128 reviews'],
       ['6–8 сар', 'Jun–Aug'],
       ['5–10 сар', 'May–Oct'],
+      ['Хугацаа: 1 цаг', 'Duration: 1 h'],
+      ['Хугацаа: 1.5 цаг', 'Duration: 1.5 h'],
+      // The nearest trips are quoted in minutes and the furthest in days.
+      ['Хугацаа: 30 мин', 'Duration: 30 min'],
+      ['Хугацаа: 2 өдөр', 'Duration: 2 days'],
+      ['Хугацаа: 2–3 өдөр', 'Duration: 2–3 days'],
       ['Сонгосон аймгууд (3)', 'Selected provinces (3)'],
       ['Таны сонголтоос 2/3 аймагт аялуулна', 'Covers 2 of your 3 provinces'],
     ])('%s → %s', (mn, en) => {

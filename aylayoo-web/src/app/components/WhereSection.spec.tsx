@@ -320,6 +320,8 @@ describe('travel modes', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Хотоор аялах/ }));
     expect(screen.getByText('Улаанбаатар хотын аялал')).toBeTruthy();
     expect(document.querySelectorAll('.tile')).toHaveLength(4);
-    expect(screen.getByText('Цонжин Болдог (Чингис хааны морьт хөшөө)')).toBeTruthy();
+    // The trips are a static table, so all five cards stand whatever the API is doing.
+    expect(document.querySelectorAll('.trip-grid .card')).toHaveLength(5);
+    expect(screen.getByText('Чингис хааны морьт хөшөө (Цонжин Болдог)')).toBeTruthy();
   });
 });

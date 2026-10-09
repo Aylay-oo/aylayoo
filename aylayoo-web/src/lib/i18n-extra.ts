@@ -17,6 +17,53 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Уулзъя өө': 'Uulzay oo',
   'Амрая өө': 'Amray oo',
 
+  /* ---- day trips from Ulaanbaatar ----
+   * Names and blurbs for the trip cards. They reach t() as `t(trip.name)` rather than as
+   * literals, so i18n-coverage.spec.ts cannot see them — trips.spec.ts checks them instead.
+   * A few names the design already had keep their entry in i18n-dictionary.ts. */
+  'Зайсан толгой ба Богд хан уулын ам': 'Zaisan Hill & the Bogd Khan foothills',
+  'Хотын панорам дэлгэгдэх дурсгалт толгой, хажууд нь Богд хан уулын ойн зам.':
+    'A memorial hill with the whole city laid out below it, and the forest paths of Bogd Khan mountain alongside.',
+  'Гачуурт': 'Gachuurt',
+  'Туул голын хөндийд байрлах ойрын амралтын бүс. Морь унаж, явган аялж, завиар сэлүүрдэнэ.':
+    'A riverside escape in the Tuul valley. Horse riding, walking trails and canoeing on the river.',
+  'Богд хан уулын өмнөд энгэрийн нарсан хөндийд орших хийдийн балгас.':
+    'The ruins of a monastery in a pine valley on the southern side of Bogd Khan mountain.',
+  'Цэцээгүн оргил (Богд хан уул)': 'Tsetseegun Peak (Bogd Khan mountain)',
+  'Манзуширын хийдээс эхлэх явган аяллын зам. Оргил хүртэл 3–4 цаг өгсөнө.':
+    'A hiking route starting at Manzushir Monastery. It is a three to four hour climb to the summit.',
+  'Чингис хааны морьт хөшөө (Цонжин Болдог)': 'Chinggis Khaan Equestrian Statue (Tsonjin Boldog)',
+  'Дэлхийн хамгийн том морьт хөшөө, дор нь музейн цогцолбор. Хөшөөний орой нь Туулын хөндийг харах тавцан.':
+    "The largest equestrian statue in the world, with a museum beneath it. The horse's head is a viewing deck over the Tuul valley.",
+  'Мэлхий хад (Горхи-Тэрэлж)': 'Turtle Rock (Gorkhi-Terelj)',
+  'Тэрэлжийн ойт уулсын бэлгэ тэмдэг болсон боржин хадны тогтоц. Эргэн тойронд морин болон явган замууд олон.':
+    "The granite formation that became the symbol of Terelj's wooded hills, with horse and walking trails all around it.",
+  'Арьяабалын хийд': 'Aryabal Meditation Temple',
+  'Тэрэлжийн уулын энгэрт сууриласан бясалгалын сүм. Хүрэхийн тулд дүүжин гүүр, зуу гаруй шатаар өгсөнө.':
+    'A meditation temple set into a Terelj hillside. Getting there means a suspension bridge and a climb of over a hundred steps.',
+  'Тэрэлжийн гэр бааз ба морин аялал': 'Terelj ger camp & horse trek',
+  'Гэр баазад хонож, өглөө нь морьтой аялах хоёр өдрийн маршрут. Анх удаа морь унаж буй хүнд ч тохиромжтой.':
+    'A two-day route: a night in a ger camp, then a morning on horseback. Suitable for first-time riders.',
+  'Хустайн байгалийн цогцолбор газар': 'Khustai National Park',
+  'Зэрлэг тахийг байгальд нь харах боломжтой нөөц газар. Үдшийн усалгааны цагаар хамгийн ойр ирдэг.':
+    "A reserve where the wild takhi — Przewalski's horse — can be seen in the open. They come closest when they water in the evening.",
+  '13-р зууны цогцолбор': 'Thirteenth Century Complex',
+  'XIII зууны нүүдэлчдийн ахуйг сэргээсэн зургаан бааз. Хааны өргөө, цэрэг, урчуудын хороогоор дамжин үзнэ.':
+    "Six camps recreating nomadic life in the thirteenth century, from the khan's court to the soldiers' and craftsmen's quarters.",
+  'Гүн-Галуутын байгалийн нөөц газар': 'Gun-Galuut Nature Reserve',
+  'Нуур, намгархаг нуга, аргаль хонь, олон зүйлийн шувуу. Улаанбаатарт хамгийн ойр шувуу ажиглах газар.':
+    'Lakes, wetlands, argali sheep and a long bird list — the best birdwatching within easy reach of the city.',
+  '1740 онд босгож, ойн гүнд орхигдсон сүм. Зам байхгүй тул морьтой эсвэл хэд хоногийн явган аялалаар хүрнэ.':
+    'A temple raised in 1740 and left to the forest. There is no road: it is reached on horseback, or on a hike of several days.',
+  'Зоргол хайрхан': 'Zorgol Khairkhan',
+  'Улаан боржин чулуутай тахилгат уул. Агуй, рашаан булаг, авирах олон зам бий.':
+    'A sacred mountain of red granite, with caves, spring water and plenty of climbing routes.',
+  'Хагийн хар нуур': 'Khagiin Khar Lake',
+  'Уулсын дунд орших нуур. Намаг, гол гатлах хүндхэн замтай тул хэд хоногийн бэлтгэлтэй явна.':
+    'A lake among the mountains. The way in crosses marsh and rivers, so it takes several days and some preparation.',
+  'Хойд зүгийн хоёр дахь том хот, хажууд нь Хар голын эргийн амралтын бүс.':
+    'The second-largest city in the north, with the riverside resorts of the Kharaa alongside it.',
+
   /* ---- loading and errors ---- */
   'Ачаалж байна…': 'Loading…',
   'Дахин оролдох': 'Try again',

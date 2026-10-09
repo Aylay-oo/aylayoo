@@ -64,6 +64,9 @@ export function translate(s: string): string {
   if ((m = s.match(/^([\d.]+) · (\d+) үнэлгээ$/))) return `${m[1]} · ${m[2]} reviews`;
   if ((m = s.match(/^(\d+)–(\d+) сар$/))) return `${MONTHS[+m[1]]}–${MONTHS[+m[2]]}`;
   if ((m = s.match(/^Хугацаа: (.+) цаг$/))) return `Duration: ${m[1]} h`;
+  // The nearest trips are measured in minutes, and the furthest in days.
+  if ((m = s.match(/^Хугацаа: (.+) мин$/))) return `Duration: ${m[1]} min`;
+  if ((m = s.match(/^Хугацаа: (.+) өдөр$/))) return `Duration: ${m[1]} days`;
   if ((m = s.match(/^Сонгосон аймгууд \((\d+)\)$/))) return `Selected provinces (${m[1]})`;
   if ((m = s.match(/^Таны сонголтоос (\d+)\/(\d+) аймагт аялуулна$/)))
     return `Covers ${m[1]} of your ${m[2]} provinces`;

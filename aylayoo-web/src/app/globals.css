@@ -264,7 +264,13 @@ section.block{padding:84px 0}
 .radius-tabs{display:inline-flex;background:var(--soft);border-radius:12px;padding:4px;gap:2px}
 .radius-tabs button{border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13.5px;padding:9px 18px;border-radius:9px}
 .radius-tabs button[aria-selected="true"]{background:var(--green);color:#fff}
-.trip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,360px));justify-content:center;gap:18px;margin-top:24px}
+/* Flex rather than grid, because there are five cards. An auto-fit grid packs four across a
+ * 1180px wrap and leaves the fifth alone at the left of its own row; wrapped flex items fit
+ * three and centre the remaining two under them. The basis decides the breakpoints — three
+ * across a desktop wrap, two on a tablet, one on a phone — and the max-width keeps the last
+ * row's cards the same size as the rest instead of letting two stretch to fill the row. */
+.trip-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;margin-top:24px}
+.trip-grid > .card{flex:1 1 300px;max-width:360px}
 
 /* Cards (shared) */
 .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}

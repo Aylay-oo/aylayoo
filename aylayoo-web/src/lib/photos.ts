@@ -53,8 +53,10 @@ const BY_NAME: ReadonlyArray<readonly [RegExp, PhotoKey]> = [
   [/Зайсан/, 'ub_aerial'],
 ];
 
-/* Otherwise a photo comes from the pool for that image type. */
-const POOL: Record<string, readonly PhotoKey[]> = {
+/* Otherwise a photo comes from the pool for that image type. Exported because an image type
+ * that is not a key here silently falls back to `steppe`, so the trips table's keys are
+ * checked against it rather than trusted. */
+export const POOL: Record<string, readonly PhotoKey[]> = {
   lake: ['cattle_lake', 'larch_lake'],
   desert: ['flaming_cliffs', 'camels'],
   mountain: ['snow_gers', 'glacier_riders', 'camel_glacier', 'valley_ger'],
