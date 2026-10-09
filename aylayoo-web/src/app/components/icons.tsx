@@ -37,15 +37,6 @@ export function SearchIcon({ size = 18 }: IconProps) {
   );
 }
 
-export function SearchIconBold({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
 export function MenuIcon({ size = 20 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
@@ -54,46 +45,7 @@ export function MenuIcon({ size = 20 }: IconProps) {
   );
 }
 
-/* ---------- Hero search ---------- */
-
-export function PinIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" />
-    </svg>
-  );
-}
-
-export function CalendarIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-    </svg>
-  );
-}
-
-export function GuideSearchIcon({ size = 20 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <circle cx="9" cy="7" r="3.5" />
-      <path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6" />
-      <circle cx="17.5" cy="15.5" r="3" />
-      <path d="m19.7 17.7 2 2" />
-    </svg>
-  );
-}
-
-/* ---------- Quick links ---------- */
-
-export function RouteMountainIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
-      <path d="M2 20 9 7l4 7 3-4 6 10z" />
-      <path d="m7.5 10 1.5 2 1.5-2" />
-    </svg>
-  );
-}
+/* ---------- People and places ---------- */
 
 export function GuidePersonIcon({ size = 22 }: IconProps) {
   return (
@@ -101,41 +53,6 @@ export function GuidePersonIcon({ size = 22 }: IconProps) {
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7z" />
       <path d="M8.5 6.5c1-2 5-2.5 7 0" />
-    </svg>
-  );
-}
-
-export function CompanyIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <rect x="4" y="3" width="12" height="18" rx="1" />
-      <path d="M16 9h4v12h-4M8 7h4M8 11h4M8 15h4M9 21v-3h2v3" />
-    </svg>
-  );
-}
-
-export function DocumentIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <path d="M6 3h9l4 4v14H6z" />
-      <path d="M14 3v5h5M9 12h7M9 16h7" />
-    </svg>
-  );
-}
-
-export function MapLayersIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z" />
-      <circle cx="12" cy="10" r="2.2" />
-    </svg>
-  );
-}
-
-export function StarOutlineIcon({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
-      <path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1L3.2 9.4l6.1-.8z" />
     </svg>
   );
 }

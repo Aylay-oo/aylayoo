@@ -7,7 +7,7 @@ import {
 /* The state the design kept in module-level variables — `selectedSet`, `activeCode` and
  * `checked` — shared here through context because several sections read and write it:
  *
- *   hero search      → sets the mode, selects an aimag, or filters the guides
+ *   header magnifier → switches to countryside mode
  *   map              → toggles the selection
  *   info card        → focuses or removes one aimag
  *   checklist        → ticks places, which re-scores the recommended guides

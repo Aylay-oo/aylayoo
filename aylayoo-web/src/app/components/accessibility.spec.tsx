@@ -10,7 +10,6 @@ import { GuidesSection } from './GuidesSection';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { MustSeeCarousel } from './MustSeeCarousel';
-import { QuickLinks } from './QuickLinks';
 import { TeamSection } from './TeamSection';
 import { WhereSection } from './WhereSection';
 import { WhySection } from './WhySection';
@@ -71,8 +70,7 @@ function renderPage() {
           <SkipLink />
           <Header />
           <main id="top">
-            <Hero aimags={AIMAGS} aimagsLoading={false} />
-            <QuickLinks />
+            <Hero />
             <WhereSection aimags={ready(AIMAGS)} places={ready(PLACES)} guides={ready(GUIDES)} />
             <MustSeeCarousel places={ready(PLACES)} />
             <WhySection />
@@ -262,11 +260,15 @@ describe('document structure', () => {
     expect(jumps).toEqual([]);
   });
 
-  it('gives every landmark region a name where there is more than one of its kind', () => {
+  it('names every navigation and section landmark', () => {
+    /* The page has one <nav> since the hero's quick links went, but several <section>s, and
+     * the rule is the same for both: a landmark a screen reader can jump to needs a name,
+     * or its rotor lists an anonymous "navigation" and "region". */
     renderPage();
-    const navs = [...document.querySelectorAll('nav')];
-    expect(navs.length).toBeGreaterThan(1);
-    expect(navs.filter((nav) => !accessibleName(nav) && !nav.getAttribute('aria-label'))).toEqual([]);
+    const landmarks = [...document.querySelectorAll('nav, section[aria-label]')];
+    expect(landmarks.length).toBeGreaterThan(1);
+    expect(landmarks.filter((el) => !accessibleName(el) && !el.getAttribute('aria-label')))
+      .toEqual([]);
   });
 
   it('marks the carousels as such', () => {

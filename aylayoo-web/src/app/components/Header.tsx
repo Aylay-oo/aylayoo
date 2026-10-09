@@ -6,9 +6,6 @@ import { useLang, type Lang } from '../../lib/i18n';
 import { useTravelState, type TravelMode } from '../../lib/travel-state';
 import { LogoMark, MenuIcon, SearchIcon } from './icons';
 
-/** Where the hero search's first field lives, so the header's magnifier can focus it. */
-export const WHERE_FIELD_ID = 'sWhere';
-
 type NavLink = {
   label: string;
   href: string;
@@ -40,11 +37,11 @@ export function Header() {
     if (link.mode) setMode(link.mode);
   }
 
+  /* The hero carries no search form any more, so the magnifier goes to where choosing a
+   * destination actually happens: the map, in countryside mode. */
   function jumpToSearch() {
-    document.querySelector('.hero')?.scrollIntoView({ behavior: 'smooth' });
-    // The design waited out the smooth scroll before focusing, otherwise the browser
-    // cancels the scroll to bring the focused field into view.
-    setTimeout(() => document.getElementById(WHERE_FIELD_ID)?.focus(), 400);
+    setMode('country');
+    document.getElementById('where')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   return (

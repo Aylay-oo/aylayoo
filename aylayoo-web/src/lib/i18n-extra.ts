@@ -9,6 +9,14 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   /* ---- navigation the design did not have ---- */
   'Үндсэн агуулга руу шилжих': 'Skip to main content',
 
+  /* ---- hero headline ----
+   * The design's dictionary has the whole line, because the mockup showed it whole. The
+   * headline now cycles one phrase at a time, so each phrase needs its own entry; the
+   * romanisation is the one the full line already uses. */
+  'Аялая өө': 'Aylay oo',
+  'Уулзъя өө': 'Uulzay oo',
+  'Амрая өө': 'Amray oo',
+
   /* ---- loading and errors ---- */
   'Ачаалж байна…': 'Loading…',
   'Дахин оролдох': 'Try again',

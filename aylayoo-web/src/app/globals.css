@@ -94,7 +94,10 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
 @media (max-width:560px){.h-tools .btn-ghost{display:none}.logo small{display:none}}
 
 /* ---------- Hero ---------- */
-.hero{position:relative;min-height:600px;display:flex;align-items:center;overflow:hidden;color:#fff;isolation:isolate}
+/* The 20px is what the row of quick links under the hero used to contribute to the gap
+ * before #where (margin-top:-8px + padding-bottom:28px). The wave is already the page
+ * background's colour, so this reads as part of it. */
+.hero{position:relative;margin-bottom:20px;min-height:600px;display:flex;align-items:center;overflow:hidden;color:#fff;isolation:isolate}
 .hero{background:#2B4A36}
 .hero-slides{position:absolute;inset:0;z-index:-2;overflow:hidden}
 .hero-slide{position:absolute;inset:-2%;background-size:cover;background-position:center;opacity:0;will-change:opacity,transform;animation:heroDissolve 28s linear infinite}
@@ -108,36 +111,33 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
   100%{opacity:0;transform:scale(1.02) translateX(-1.5%)}}
 @media (prefers-reduced-motion:reduce){.hero-slide{animation:none}.hero-slide:not(:first-child){display:none}}
 .hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(8,30,18,.66) 0%,rgba(8,30,18,.38) 45%,rgba(8,30,18,.08) 75%),linear-gradient(0deg,rgba(8,30,18,.35),transparent 35%)}
-.hero .wrap{width:100%;padding-top:56px;padding-bottom:120px}
+.hero .wrap{width:100%;padding-top:72px;padding-bottom:96px}
 .hero h1{font-weight:800;font-size:clamp(36px,5.6vw,66px);text-transform:uppercase;letter-spacing:.005em;line-height:1.02;max-width:12ch;text-shadow:0 2px 24px rgba(0,0,0,.25)}
 .hero p{max-width:52ch;font-size:16.5px;margin:22px 0 30px;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.3)}
-.search{background:#fff;color:#18261F;border-radius:16px;display:grid;grid-template-columns:1.2fr 1fr 1.2fr auto;gap:0;max-width:760px;padding:8px;box-shadow:0 18px 40px -16px rgba(0,0,0,.45)}
-.s-field{display:flex;gap:12px;align-items:center;padding:8px 14px;border-right:1px solid #E3E8E2;min-width:0}
-.s-field:nth-child(3){border-right:0}
-.s-field svg{flex-shrink:0;color:var(--green)}
-.s-field label{display:block;font-size:13px;font-weight:700}
-.s-field select,.s-field input{border:0;background:transparent;font:500 13px var(--font-b);color:#5B6A61;padding:2px 0;width:100%;min-width:0;outline:none}
-.s-field:focus-within{background:#F2F6F1;border-radius:10px}
-.search .btn{padding:0 24px;border-radius:11px;background:var(--green)}
-.search .btn:hover{background:var(--green-d)}
-.hero-wave{position:absolute;left:0;right:0;bottom:-1px;height:70px;z-index:0;color:var(--bg)}
+/* The headline cycles one phrase at a time (see HeroHeadline.tsx). The box is exactly one
+ * line tall whatever is inside it, so the paragraph below never moves when the phrase
+ * changes; the three phrases are stacked on top of each other within it.
+ *
+ * They travel in one direction: the next phrase rises in from below, the one it replaces
+ * keeps going up and out. `.out` is the phrase the component just left, which is why there
+ * are three states here and not two. No overflow:hidden, because a one-line-tall box clips
+ * the descender in "Aylay oo" on the English side. */
+.hero-cycle{position:relative;display:block;height:1.02em}
+.hero-cycle > span{position:absolute;left:0;top:0;white-space:nowrap;opacity:0;transform:translateY(.34em);transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
+.hero-cycle > span.on{opacity:1;transform:translateY(0)}
+.hero-cycle > span.out{transform:translateY(-.34em)}
+/* Under reduced motion the component renders the whole headline instead, so there is
+   nothing here to switch off. */
+
+/* width:100% is load-bearing. This svg has a viewBox and no width/height attributes, so its
+ * intrinsic ratio is 1440/70 — and an absolutely positioned replaced element with `width:
+ * auto` and a set height takes its width from that ratio and ignores `right`, which left the
+ * wave exactly 1440px wide and the photo showing past its right end above 1440px. */
+.hero-wave{position:absolute;left:0;right:0;bottom:-1px;display:block;width:100%;height:70px;z-index:0;color:var(--bg)}
 @media (max-width:760px){
   .hero{min-height:auto}
-  .hero .wrap{padding-top:44px;padding-bottom:96px}
-  .search{grid-template-columns:1fr}
-  .s-field{border-right:0;border-bottom:1px solid #E3E8E2;padding:12px}
-  .s-field:nth-child(3){border-bottom:0}
-  .search .btn{padding:14px}
+  .hero .wrap{padding-top:44px;padding-bottom:84px}
 }
-
-/* ---------- Quick icons ---------- */
-.quick{position:relative;z-index:1;margin-top:-8px;padding-bottom:28px}
-.quick ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.quick a{display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;font-size:13.5px;font-weight:600;color:var(--ink);padding:12px 6px;border-radius:14px;text-align:center}
-.quick a:hover{background:var(--paper)}
-.quick a:hover .q-ic{background:var(--green);color:#fff}
-.q-ic{width:48px;height:48px;border-radius:50%;background:var(--mint);color:var(--green-d);display:grid;place-items:center;transition:background .2s,color .2s}
-@media (max-width:760px){.quick ul{grid-template-columns:repeat(3,1fr)}}
 
 /* ---------- Sections ---------- */
 section.block{padding:84px 0}
@@ -480,8 +480,6 @@ footer a:hover{color:var(--green-d)}
 
 /* ---------- Green page bg + black must-see ---------- */
 #where{background:transparent}
-.quick a:hover{background:rgba(255,255,255,.7)}
-.q-ic{background:#fff;box-shadow:0 4px 12px -6px rgba(21,38,29,.25)}
 .seg,.radius-tabs{background:#fff}
 #why{background:linear-gradient(135deg,#C4E6D0 0%,#B6DFC5 100%)!important}
 #mustsee{background:radial-gradient(ellipse 60% 50% at 50% 42%,rgba(255,255,255,.05),transparent 70%),#0E110F!important;color:#F3F1EA;border:0}
@@ -508,8 +506,6 @@ footer a:hover{color:var(--green-d)}
 .kicker{color:#0B3A1C}
 .s-head p,.car-hint{color:#0D2A16;opacity:1}
 .s-head h2{color:#0B1A10}
-.quick a{color:#0B1A10}
-.quick a:hover{background:rgba(255,255,255,.85)}
 #why .kicker{color:var(--green-d)}
 #why .s-head p{color:var(--muted)}
 .map-card{background:#F1F8F2}
@@ -524,12 +520,10 @@ footer a:hover{color:var(--green-d)}
   --r-west:#A9C6F2; --r-hangai:#9BDB86; --r-center:#F4D77C; --r-east:#F2AE95; --r-cap:#14240C;
   --shadow:0 1px 2px rgba(20,36,12,.06),0 10px 28px -14px rgba(46,107,5,.28);
 }
-.btn-primary,.search .btn,.seg button[aria-selected="true"],.radius-tabs button[aria-selected="true"],.filters button[aria-pressed="true"],.a-chip.active{background:var(--green);border-color:var(--green);color:#fff}
-.btn-primary:hover,.search .btn:hover{background:var(--green-d)}
+.btn-primary,.seg button[aria-selected="true"],.radius-tabs button[aria-selected="true"],.filters button[aria-pressed="true"],.a-chip.active{background:var(--green);border-color:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-d)}
 .btn-soft{background:var(--mint);color:var(--green-d)}
 .btn-soft:hover{background:var(--green);color:#fff}
-.q-ic{background:#fff;color:var(--green-d);box-shadow:0 4px 12px -6px rgba(46,107,5,.35)}
-.quick a:hover .q-ic{background:var(--green-l);color:#fff}
 .kicker{color:var(--green-d)}
 .s-head h2{color:var(--ink)}
 .s-head p,.car-hint{color:var(--muted)}

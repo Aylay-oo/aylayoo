@@ -10,7 +10,6 @@ import { Header } from './Header';
 import { Hero } from './Hero';
 import { GuidesSection } from './GuidesSection';
 import { MustSeeCarousel } from './MustSeeCarousel';
-import { QuickLinks } from './QuickLinks';
 import { RegisterDialog } from './RegisterDialog';
 import { TeamSection } from './TeamSection';
 import { Toast } from './Toast';
@@ -18,7 +17,7 @@ import { WhereSection } from './WhereSection';
 import { WhySection } from './WhySection';
 
 /* Shared data is fetched here and handed down, because several sections need the same rows:
- * the aimags feed the hero's destination list, the map, the info card and the checklist, so
+ * the aimags feed the map, the info card, the checklist and the registration form, so
  * fetching them once keeps those four in agreement and costs one request instead of four.
  * Anything only one section needs is fetched by that section.
  */
@@ -42,8 +41,7 @@ export function Home() {
       <SkipLink />
       <Header />
       <main id="top">
-        <Hero aimags={aimags.data ?? []} aimagsLoading={aimags.loading} />
-        <QuickLinks />
+        <Hero />
         <WhereSection aimags={aimags} places={places} guides={guides} />
         <MustSeeCarousel places={mustSee} />
         <WhySection />
