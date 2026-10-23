@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "extract-photos": "node scripts/extract-photos.mjs",
     "// deploy": "NEXT_PUBLIC_API_URL is inlined by `next build`, so it must be set for these two, not as a Worker var.",
-    "cf:preview": "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare preview",
-    "cf:deploy": "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy"
+    "cf:preview": "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare preview",
+    "cf:deploy": "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "next": "~16.1.7",

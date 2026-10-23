@@ -13,13 +13,32 @@ const app = new Hono<AppEnv>();
 
 app.use('*', logger());
 
+/* An Origin header is compared byte for byte by the browser, so the only forgiving thing we
+ * can do is normalise what the config and the request agree to mean: drop surrounding space,
+ * lower the case (a scheme and host are case-insensitive, and browsers already send them
+ * lowercased) and drop a trailing slash, which an Origin never carries but an entry copied
+ * out of the address bar always does. Everything beyond that stays an exact match — no
+ * suffix or wildcard matching, because `endsWith('aylayoo.com')` would also hand the API to
+ * `evil-aylayoo.com`. A new front-end domain means a new entry in wrangler.jsonc. */
+const normaliseOrigin = (value: string) => value.trim().toLowerCase().replace(/\/$/, '');
+
 // Only let our own front ends call the API from a browser.
 app.use(
   '/api/*',
   cors({
     origin: (origin, c) => {
-      const allowed = (c.env.ALLOWED_ORIGINS as string).split(',').map((s) => s.trim());
-      return allowed.includes(origin) ? origin : null;
+      // Missing entirely would otherwise throw here and turn every API call into a 500, which
+      // reads as "the server is broken" rather than "the Worker is misconfigured".
+      const configured = c.env.ALLOWED_ORIGINS;
+      if (!configured) {
+        console.error('ALLOWED_ORIGINS is not set — refusing every cross-origin request');
+        return null;
+      }
+
+      const allowed = configured.split(',').map(normaliseOrigin).filter(Boolean);
+      // Echo back the origin exactly as the browser sent it; it has to match what the browser
+      // compares against, not our normalised form.
+      return allowed.includes(normaliseOrigin(origin)) ? origin : null;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],

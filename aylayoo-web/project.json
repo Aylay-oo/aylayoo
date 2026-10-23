@@ -60,7 +60,7 @@
       ],
       "options": {
         "commands": [
-          "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev bunx next build",
+          "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
           "bunx opennextjs-cloudflare build --skipNextBuild",
           "bunx opennextjs-cloudflare deploy"
         ],
@@ -73,7 +73,7 @@
       "options": {
         "// why": "Runs the built Worker locally in workerd, which is the only way to see what Cloudflare will actually serve. Points at the live API, because that is what the production bundle is built against.",
         "commands": [
-          "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev bunx next build",
+          "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
           "bunx opennextjs-cloudflare build --skipNextBuild",
           "bunx opennextjs-cloudflare preview"
         ],

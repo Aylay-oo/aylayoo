@@ -1,6 +1,7 @@
 # aylayoo-service — Backend step-by-step guide
 
 > **Live:** https://aylayoo-service.sbolorsaikhan4.workers.dev
+> Serving https://aylayoo.com (and `www`), plus the original `aylayoo-web…workers.dev` address.
 > Deployed 2026-09-24. D1 `aylayoo-db` (EEUR), R2 `aylayoo-images`, KV `RATE_LIMIT` — all bound and seeded.
 > Steps 4–9 below are already done for this account; they remain as a reference for rebuilding from scratch.
 
@@ -353,14 +354,35 @@ Allowed front-end addresses are in `wrangler.jsonc` → `vars.ALLOWED_ORIGINS`:
 
 | Origin | What it is |
 |---|---|
+| `https://aylayoo.com` | the live site, apex domain |
+| `https://www.aylayoo.com` | the live site, www. A separate entry on purpose — see below |
+| `https://aylayoo-web.sbolorsaikhan4.workers.dev` | the original Cloudflare address, still live and still supported |
+| `https://ayalyoo-web.vercel.app` | the earlier Vercel deployment. Note it reads **ayalyoo**, which is how that project is actually named — not a typo to fix |
 | `http://localhost:3000` | the dev server — which is why aylayoo-web pins that port |
 | `http://localhost:5173` | a Vite dev server, kept from the original setup |
-| `https://ayalyoo-web.vercel.app` | the earlier Vercel deployment. Note it reads **ayalyoo**, which is how that project is actually named — not a typo to fix |
-| `https://aylayoo-web.sbolorsaikhan4.workers.dev` | the current front end, on Cloudflare |
+| `http://localhost:8787` | `opennextjs-cloudflare preview`, which serves the built Worker locally but builds against the **live** API |
 
 A browser calling from anywhere else gets no CORS header and the request fails. **Editing this
 list does nothing until the service is redeployed** — `bunx nx run aylayoo-service:deploy` —
 because it is a Worker var baked in at deploy time.
+
+`www` and the apex are listed separately because an `Origin` header is matched exactly. A
+redirect from one to the other does not help: by the time the browser sends an API request it
+has settled on one of the two as its origin, and whichever one is missing from this list fails.
+
+The match normalises case and a trailing slash, and nothing else — no suffix or wildcard
+matching, deliberately, since `endsWith('aylayoo.com')` would also admit `evil-aylayoo.com`.
+
+#### Symptom to recognise
+
+A front end on an un-allowed origin still *loads* — its own Worker serves the page fine — but
+every section that needs the API comes up empty, because each one catches its own failure. On
+the live site that looked like: the map drew (the shapes are static) but reported
+*"Газрын зургийн мэдээлэл ачаалахад алдаа гарлаа"*, aimag names fell back to their raw ISO
+codes like `MN-069` (the name lookup is keyed on data that never arrived), and the guides list
+was empty. `/admin` is affected the same way. The browser console shows a CORS error; the
+Worker's own logs show nothing wrong, because the request was answered — the browser simply
+refused to hand the response to the page.
 
 ### The front end
 

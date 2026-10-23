@@ -5,12 +5,22 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "dev": { "port": 4003 },
-  // Browsers may call the API from these origins and no others. The front end now lives on
-  // the workers.dev address; localhost:3000 is the dev server (which is why that port is
-  // pinned), and the .vercel.app entry is the old deployment, kept deliberately — note it
-  // reads "ayalyoo", which is how that project is actually named.
+  // Browsers may call the API from these origins and no others. Every front-end address needs
+  // an entry here, and the list only takes effect once *this* service is redeployed — adding a
+  // domain in Cloudflare is not enough, which is how aylayoo.com first went live with a working
+  // page but an empty map.
+  //
+  //   aylayoo.com / www.aylayoo.com  the custom domain, apex and www. Both are listed because
+  //                                  an Origin header is matched exactly: www is a different
+  //                                  origin from the apex even when one redirects to the other.
+  //   aylayoo-web…workers.dev        the original address, still live and still supported.
+  //   ayalyoo-web.vercel.app         the old deployment, kept deliberately — note it reads
+  //                                  "ayalyoo", which is how that project is actually named.
+  //   localhost:3000 / :5173         the dev server (which is why that port is pinned).
+  //   localhost:8787                 `opennextjs-cloudflare preview`, which serves the built
+  //                                  Worker locally but builds against the live API.
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:5173,https://ayalyoo-web.vercel.app,https://aylayoo-web.sbolorsaikhan4.workers.dev"
+    "ALLOWED_ORIGINS": "https://aylayoo.com,https://www.aylayoo.com,https://aylayoo-web.sbolorsaikhan4.workers.dev,https://ayalyoo-web.vercel.app,http://localhost:3000,http://localhost:5173,http://localhost:8787"
   },
   "d1_databases": [
     {

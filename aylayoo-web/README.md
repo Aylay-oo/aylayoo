@@ -4,7 +4,8 @@ Next.js (App Router) + TypeScript, built from the final design at
 `apps/aylayoo/design/aylayoo_3.html` and fed by [aylayoo-service](../aylayoo-service/README.md).
 Deploys to **Cloudflare Workers** via OpenNext, the same way `goal-tracker-web` does.
 
-> **Live:** https://aylayoo-web.sbolorsaikhan4.workers.dev · admin at `/admin`
+> **Live:** https://aylayoo.com · also https://www.aylayoo.com and the original
+> https://aylayoo-web.sbolorsaikhan4.workers.dev · admin at `/admin`
 
 ```bash
 # 1. the API (port 4003, local D1 already seeded)
@@ -50,6 +51,17 @@ the browser gets WebP anyway.
 
 `NEXT_PUBLIC_API_URL` — the only variable. Copy `.env.example` to `.env.local` for local work.
 
+The deploy and preview commands default it to the live API and let the shell win, so you can
+retarget a build without editing any file:
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.aylayoo.com bunx nx run aylayoo-web:deploy
+```
+
+It is deliberately **not** kept in `.env.production`: `.env.local` takes precedence over that
+file, so anyone with a local env file would silently ship a bundle pointing at
+`localhost:4003`. An explicit variable on the build command outranks both.
+
 **It is inlined into the client bundle by `next build`**, which is the one thing to understand
 about deploying this app: setting it as a Worker var or a Cloudflare secret does nothing,
 because the browser code has already been compiled by then. The `deploy` and `preview` targets
@@ -78,13 +90,18 @@ build --skipNextBuild`, then `deploy` (or `preview`). The Worker is named `aylay
 
 Two things to know:
 
-- **CORS.** The API only answers browsers from an origin in its allow-list. The deployed
-  address `https://aylayoo-web.sbolorsaikhan4.workers.dev` is already in
+- **CORS.** The API only answers browsers from an origin in its allow-list. `aylayoo.com`,
+  `www.aylayoo.com` and `https://aylayoo-web.sbolorsaikhan4.workers.dev` are all in
   `aylayoo-service/wrangler.jsonc`, but that list only takes effect when **the service** is
-  redeployed. A new front-end domain means editing that file and running
-  `bunx nx run aylayoo-service:deploy`.
+  redeployed. **A new front-end domain means editing that file and running
+  `bunx nx run aylayoo-service:deploy`** — pointing a domain at this Worker in the Cloudflare
+  dashboard is only half the job. Miss it and the site loads but every API-backed section is
+  empty: the map reports an error, aimag names show as raw ISO codes (`MN-069`), the guides
+  list is blank, and `/admin` cannot log in. Add `www` and the apex separately; an `Origin` is
+  matched exactly and a redirect between them does not help.
 - **Images are unoptimized.** Next's optimiser needs `sharp`, which cannot run in the Workers
-  runtime, and `/cdn-cgi/image` is not available on a `workers.dev` subdomain. So `next/image`
+  runtime, and `/cdn-cgi/image` is not available on a `workers.dev` subdomain. (Now that the
+  site has a custom domain, a Cloudflare Images loader has become possible — it was not before.) So `next/image`
   serves the files from `public/images` as they are, through the Worker's assets binding. The
   41 photos total 3.4 MB, and a first visit pulls about 645 KB for the four hero slides. If
   that becomes a problem the options are a Cloudflare Images loader on a custom domain, or a
