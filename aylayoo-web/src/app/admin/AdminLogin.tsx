@@ -39,7 +39,7 @@ export function AdminLogin({ onSignedIn }: { onSignedIn: (token: string) => void
           <LogoMark />
         </div>
         <h3>Админ нэвтрэх</h3>
-        <p>АЯЛАЯ ӨӨ-ийн хөтөч бүртгэл, мессежийг хянах хуудас.</p>
+        <p>АЯЛЪЯ ӨӨ-ийн хөтөч бүртгэл, мессежийг хянах хуудас.</p>
 
         <label className="fld">
           <span>Имэйл</span>

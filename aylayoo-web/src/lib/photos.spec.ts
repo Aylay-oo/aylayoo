@@ -72,7 +72,7 @@ describe('photoKey', () => {
       ['lake', 'Толбо нуур', 'larch_lake'],
       ['lake', 'Орог нуур', 'cattle_lake'],
       ['mountain', 'Цамбагарав уул', 'valley_ger'],
-      ['mountain', 'Ихбогд уул', 'camel_glacier'],
+      ['mountain', 'Их Богд уул', 'snow_gers'],
       ['desert', 'Молцог элс', 'camels'],
       ['steppe', 'Тайхар чулуу', 'herder_goats'],
       ['temple', 'Хамарын хийд', 'choijin'],

@@ -8,7 +8,7 @@ import { HeroHeadline } from './HeroHeadline';
  * accessibility.spec.tsx.
  */
 
-const FULL = 'Аялая өө, уулзъя өө, амрая өө';
+const FULL = 'Аялъя өө, уулзъя өө, амаръя өө';
 const PHRASE_MS = 2500;
 
 /** Flips the language on demand, for the English side of the animation. */
@@ -77,22 +77,22 @@ describe('the cycling headline', () => {
 
   it('shows one phrase at a time, in order, and starts over', () => {
     setup();
-    expect(showing()).toBe('Аялая өө');
+    expect(showing()).toBe('Аялъя өө');
 
     tick();
     expect(showing()).toBe('Уулзъя өө');
 
     tick();
-    expect(showing()).toBe('Амрая өө');
+    expect(showing()).toBe('Амаръя өө');
 
     tick();
-    expect(showing()).toBe('Аялая өө');
+    expect(showing()).toBe('Аялъя өө');
   });
 
   it('holds a phrase for the full 2.5s before moving on', () => {
     setup();
     tick(PHRASE_MS - 100);
-    expect(showing()).toBe('Аялая өө');
+    expect(showing()).toBe('Аялъя өө');
 
     tick(100);
     expect(showing()).toBe('Уулзъя өө');
@@ -102,7 +102,7 @@ describe('the cycling headline', () => {
     // Without this the outgoing phrase would sink back down towards the incoming one.
     setup();
     tick();
-    expect(leaving()).toBe('Аялая өө');
+    expect(leaving()).toBe('Аялъя өө');
     expect(showing()).toBe('Уулзъя өө');
   });
 
@@ -127,13 +127,13 @@ describe('the cycling headline', () => {
       fireEvent.click(screen.getByText('to-en'));
     });
 
-    expect(showing()).toBe('Aylay oo');
+    expect(showing()).toBe('Aylya oo');
     tick();
-    expect(showing()).toBe('Uulzay oo');
+    expect(showing()).toBe('Uulzya oo');
     tick();
-    expect(showing()).toBe('Amray oo');
+    expect(showing()).toBe('Amarya oo');
     expect(screen.getByRole('heading', { level: 1 }).textContent)
-      .toContain('Aylay oo, uulzay oo, amray oo');
+      .toContain('Aylya oo, uulzya oo, amarya oo');
   });
 
   it('stops while the tab is hidden and picks up where it left off', () => {
@@ -149,7 +149,7 @@ describe('the cycling headline', () => {
 
     setTabHidden(false);
     tick();
-    expect(showing()).toBe('Амрая өө');
+    expect(showing()).toBe('Амаръя өө');
   });
 
   it('does not leave a timer running after it unmounts', () => {

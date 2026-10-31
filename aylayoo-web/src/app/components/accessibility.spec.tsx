@@ -38,10 +38,10 @@ const AIMAGS = [
 ];
 
 const PLACES: Place[] = [{
-  id: 10, aimagId: 2, nameMn: 'Ихбогд уул', nameEn: 'Ikhbogd', descriptionMn: 'Тайлбар',
+  id: 10, aimagId: 2, nameMn: 'Их Богд уул', nameEn: 'Ikhbogd', descriptionMn: 'Тайлбар',
   descriptionEn: 'Description', category: 'nature', lat: null, lng: null, images: [],
   isMustSee: true, imageKey: 'mountain', bestMonthsMn: '6–8 сар', bestMonthsEn: 'Jun–Aug',
-  mustTitleMn: 'Ихбогд', mustTitleEn: 'Ikhbogd', mustSummaryMn: 'Уул.', mustSummaryEn: 'A mountain.',
+  mustTitleMn: 'Их Богд', mustTitleEn: 'Ikhbogd', mustSummaryMn: 'Уул.', mustSummaryEn: 'A mountain.',
   aimagSlug: 'bayankhongor', aimagNameMn: 'Баянхонгор', aimagNameEn: 'Bayankhongor',
 }];
 

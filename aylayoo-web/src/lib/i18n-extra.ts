@@ -13,9 +13,9 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
    * The design's dictionary has the whole line, because the mockup showed it whole. The
    * headline now cycles one phrase at a time, so each phrase needs its own entry; the
    * romanisation is the one the full line already uses. */
-  'Аялая өө': 'Aylay oo',
-  'Уулзъя өө': 'Uulzay oo',
-  'Амрая өө': 'Amray oo',
+  'Аялъя өө': 'Aylya oo',
+  'Уулзъя өө': 'Uulzya oo',
+  'Амаръя өө': 'Amarya oo',
 
   /* ---- day trips from Ulaanbaatar ----
    * Names and blurbs for the trip cards. They reach t() as `t(trip.name)` rather than as
@@ -39,12 +39,12 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Тэрэлжийн ойт уулсын бэлгэ тэмдэг болсон боржин хадны тогтоц. Эргэн тойронд морин болон явган замууд олон.':
     "The granite formation that became the symbol of Terelj's wooded hills, with horse and walking trails all around it.",
   'Арьяабалын хийд': 'Aryabal Meditation Temple',
-  'Тэрэлжийн уулын энгэрт сууриласан бясалгалын сүм. Хүрэхийн тулд дүүжин гүүр, зуу гаруй шатаар өгсөнө.':
+  'Тэрэлжийн уулын энгэрт суурилсан бясалгалын сүм. Хүрэхийн тулд дүүжин гүүр, зуу гаруй шатаар өгсөнө.':
     'A meditation temple set into a Terelj hillside. Getting there means a suspension bridge and a climb of over a hundred steps.',
   'Тэрэлжийн гэр бааз ба морин аялал': 'Terelj ger camp & horse trek',
   'Гэр баазад хонож, өглөө нь морьтой аялах хоёр өдрийн маршрут. Анх удаа морь унаж буй хүнд ч тохиромжтой.':
     'A two-day route: a night in a ger camp, then a morning on horseback. Suitable for first-time riders.',
-  'Хустайн байгалийн цогцолбор газар': 'Khustai National Park',
+  'Хустайн байгалийн цогцолборт газар': 'Khustai National Park',
   'Зэрлэг тахийг байгальд нь харах боломжтой нөөц газар. Үдшийн усалгааны цагаар хамгийн ойр ирдэг.':
     "A reserve where the wild takhi — Przewalski's horse — can be seen in the open. They come closest when they water in the evening.",
   '13-р зууны цогцолбор': 'Thirteenth Century Complex',
@@ -55,10 +55,10 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
     'Lakes, wetlands, argali sheep and a long bird list — the best birdwatching within easy reach of the city.',
   '1740 онд босгож, ойн гүнд орхигдсон сүм. Зам байхгүй тул морьтой эсвэл хэд хоногийн явган аялалаар хүрнэ.':
     'A temple raised in 1740 and left to the forest. There is no road: it is reached on horseback, or on a hike of several days.',
-  'Зоргол хайрхан': 'Zorgol Khairkhan',
+  'Зоргол Хайрхан': 'Zorgol Khairkhan',
   'Улаан боржин чулуутай тахилгат уул. Агуй, рашаан булаг, авирах олон зам бий.':
     'A sacred mountain of red granite, with caves, spring water and plenty of climbing routes.',
-  'Хагийн хар нуур': 'Khagiin Khar Lake',
+  'Хагийн Хар нуур': 'Khagiin Khar Lake',
   'Уулсын дунд орших нуур. Намаг, гол гатлах хүндхэн замтай тул хэд хоногийн бэлтгэлтэй явна.':
     'A lake among the mountains. The way in crosses marsh and rivers, so it takes several days and some preparation.',
   'Хойд зүгийн хоёр дахь том хот, хажууд нь Хар голын эргийн амралтын бүс.':

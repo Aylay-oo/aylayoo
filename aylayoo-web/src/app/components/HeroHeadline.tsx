@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLang } from '../../lib/i18n';
 
-/* The hero headline, showing one phrase at a time: Аялая өө → Уулзъя өө → Амрая өө → repeat.
+/* The hero headline, showing one phrase at a time: Аялъя өө → Уулзъя өө → Амаръя өө → repeat.
  *
  * The whole line stays in the <h1> as a visually hidden span, and the cycling copy is
  * aria-hidden. Without that split, a screen reader or a crawler reading the heading at any
@@ -14,10 +14,10 @@ import { useLang } from '../../lib/i18n';
  */
 
 /** The three phrases, in the order the full headline reads them. */
-const PHRASES = ['Аялая өө', 'Уулзъя өө', 'Амрая өө'] as const;
+const PHRASES = ['Аялъя өө', 'Уулзъя өө', 'Амаръя өө'] as const;
 
 /** What the h1 announces, and what the page is indexed on. */
-const FULL_HEADLINE = 'Аялая өө, уулзъя өө, амрая өө';
+const FULL_HEADLINE = 'Аялъя өө, уулзъя өө, амаръя өө';
 
 /** How long one phrase stays on screen. The CSS transition is shorter, so it settles. */
 const PHRASE_MS = 2500;

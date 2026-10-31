@@ -35,12 +35,12 @@ const BAYANKHONGOR = aimag({ id: 2, slug: 'bayankhongor', isoCode: 'MN-069', nam
 const DORNOD = aimag({ id: 3, slug: 'dornod', isoCode: 'MN-061', nameMn: 'Дорнод', nameEn: 'Dornod', region: 'eastern' });
 
 const PLACES = [
-  place({ id: 10, aimagId: 2, nameMn: 'Ихбогд уул' }),
+  place({ id: 10, aimagId: 2, nameMn: 'Их Богд уул' }),
   place({ id: 11, aimagId: 2, nameMn: 'Цагаан агуй' }),
   place({ id: 20, aimagId: 1, nameMn: 'Хөвсгөл нуур' }),
   place({ id: 30, aimagId: 3, nameMn: 'Буйр нуур' }),
   place({ id: 31, aimagId: 3, nameMn: 'Халх голын дурсгал' }),
-  place({ id: 32, aimagId: 3, nameMn: 'Монгол дагуурын тал' }),
+  place({ id: 32, aimagId: 3, nameMn: 'Монгол Дагуурын тал' }),
 ];
 
 const AIMAG_LINK = {
@@ -171,7 +171,7 @@ describe('the info card', () => {
   it('lists only that aimag\'s places', () => {
     setup();
     const card = document.querySelector('.info-card') as HTMLElement;
-    expect(within(card).getByText('Ихбогд уул')).toBeTruthy();
+    expect(within(card).getByText('Их Богд уул')).toBeTruthy();
     expect(within(card).queryByText('Хөвсгөл нуур')).toBeNull();
   });
 
@@ -214,13 +214,13 @@ describe('the checklist', () => {
     const count = document.querySelector('.count') as HTMLElement;
     expect(count.textContent).toContain('0');
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /Ихбогд уул/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Их Богд уул/ }));
     expect(count.textContent).toContain('1');
   });
 
   it('forgets ticks when the aimag is deselected', () => {
     setup();
-    fireEvent.click(screen.getByRole('checkbox', { name: /Ихбогд уул/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Их Богд уул/ }));
     expect(document.querySelector('.count')?.textContent).toContain('1');
 
     fireEvent.click(shape('Баянхонгор'));
@@ -268,7 +268,7 @@ describe('the recommended guides', () => {
     });
     fireEvent.click(shape('Хөвсгөл'));
     fireEvent.click(shape('Дорнод'));
-    for (const name of [/Буйр нуур/, /Халх голын дурсгал/, /Монгол дагуурын тал/]) {
+    for (const name of [/Буйр нуур/, /Халх голын дурсгал/, /Монгол Дагуурын тал/]) {
       fireEvent.click(screen.getByRole('checkbox', { name }));
     }
     expect(recommendedNames()).toEqual(['Хоёр Аймаг', 'Зөвхөн Дорнод']);
@@ -282,7 +282,7 @@ describe('the recommended guides', () => {
     fireEvent.click(shape('Хөвсгөл'));
     expect(recommendedNames()).toEqual(['Үнэлгээтэй Хөвсгөл', 'Үнэлгээгүй Баянхонгор']);
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /Ихбогд уул/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Их Богд уул/ }));
     expect(recommendedNames()).toEqual(['Үнэлгээгүй Баянхонгор', 'Үнэлгээтэй Хөвсгөл']);
   });
 

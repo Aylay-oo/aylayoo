@@ -114,7 +114,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
     document.title = lang === 'en'
       ? 'AYLAYOO | Travel in Mongolia'
-      : 'АЯЛАЯ ӨӨ | Монголын аяллын платформ';
+      : 'АЯЛЪЯ ӨӨ | Монголын аяллын платформ';
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {

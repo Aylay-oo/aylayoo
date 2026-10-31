@@ -53,7 +53,7 @@ export default function AdminPage() {
         <div className="wrap">
           <span className="admin-brand">
             <LogoMark />
-            <b>АЯЛАЯ ӨӨ</b> админ
+            <b>АЯЛЪЯ ӨӨ</b> админ
           </span>
           <button className="btn btn-ghost" type="button" onClick={signOut}>
             Гарах

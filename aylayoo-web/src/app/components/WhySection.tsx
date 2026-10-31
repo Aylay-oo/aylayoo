@@ -31,7 +31,7 @@ export function WhySection() {
       <div className="wrap">
         <div className="s-head">
           <span className="kicker">{t('Бидний давуу тал')}</span>
-          <h2>{t('Яагаад «АЯЛАЯ ӨӨ»-г сонгох вэ?')}</h2>
+          <h2>{t('Яагаад «АЯЛЪЯ ӨӨ»-г сонгох вэ?')}</h2>
         </div>
         <div className="why-grid">
           {REASONS.map(({ Icon, title, body }) => (

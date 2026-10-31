@@ -47,7 +47,7 @@ export function Header() {
   return (
     <header className="header">
       <div className="wrap">
-        <a className="logo" href="#top" aria-label={t('АЯЛАЯ ӨӨ нүүр хуудас')}>
+        <a className="logo" href="#top" aria-label={t('АЯЛЪЯ ӨӨ нүүр хуудас')}>
           <LogoMark />
           <span>
             <span className="logo-word">
@@ -58,7 +58,7 @@ export function Header() {
                 <i />
               </span>
             </span>
-            <small>{t('Аялая өө, Уулзъя өө, Амрая өө')}</small>
+            <small>{t('Аялъя өө, Уулзъя өө, Амаръя өө')}</small>
           </span>
         </a>
 
