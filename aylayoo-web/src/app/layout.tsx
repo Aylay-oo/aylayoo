@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Montserrat, Playfair_Display } from 'next/font/google';
 import { DEFAULT_OG_IMAGE, HOME_TITLES, SITE_NAME, SITE_URL } from '../lib/seo';
+import { Analytics } from './components/Analytics';
 import './globals.css';
 // After globals.css on purpose: additions.css only styles elements the design never had,
 // and loading later means it can lean on the palette without fighting the cascade.
@@ -74,7 +75,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       style={{ colorScheme: 'light' }}
       className={`${montserrat.variable} ${manrope.variable} ${playfair.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
