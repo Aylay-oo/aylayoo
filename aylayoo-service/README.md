@@ -245,7 +245,8 @@ All responses are JSON. Lists look like `{ "data": [...] }`, errors like `{ "err
 |---|---|---|
 | GET | `/api/aimags` | all aimags, each with `isoCode`, `centerMn/En`, `areaKm2` |
 | GET | `/api/aimags/:slug` | one aimag + its `places` |
-| GET | `/api/places` | query: `aimag`, `category` (nature/historical/city/cultural), `mustSee=true` |
+| GET | `/api/places` | query: `aimag` (one slug), `category` (nature/historical/city/cultural), `mustSee=true` |
+| GET | `/api/places/:id` | one place, plus its `aimagSlug` / `aimagNameMn` / `aimagNameEn` |
 | GET | `/api/guides` | query: `aimag` (comma-separated slugs, e.g. `umnugovi,khuvsgul`), `type` (company/individual/driver), `language` (mn/en/…), `tripType` (city/countryside), `page`, `limit` (max 50). Returns `pagination` too |
 | GET | `/api/guides/:id` | one approved guide with its aimags |
 | POST | `/api/guides/register` | multipart form: `data` = JSON string, `photo` = image (optional). Saved as **pending** |
