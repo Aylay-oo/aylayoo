@@ -425,3 +425,162 @@
 /* Something the roster does not record and nobody has filled in yet. Muted and italic, so a
  * scan down the column finds the gaps. */
 .admin-unset { color: var(--muted); font-style: italic; }
+
+/* ============================================================================
+ * Detail pages — /guides/[id], /aimags/[slug], /places/[id], and the 404.
+ *
+ * The design was a single page, so it has no vocabulary for a page that is just one record.
+ * These lean entirely on its custom properties and card idiom, so a detail page reads as the
+ * same site: paper card, hairline border, the same shadow and radius.
+ * ========================================================================== */
+
+.detail { padding: 24px 0 48px; }
+.detail .wrap { max-width: 860px; }
+
+/* ---------- Breadcrumb ---------- */
+
+/* An <ol>, because each crumb contains the next. The separator is generated rather than typed
+ * so it never lands in the accessible name a screen reader reads out. */
+.crumbs { margin: 0 0 16px; font: 500 13px var(--font-b); color: var(--muted); }
+.crumbs ol { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; }
+.crumbs li + li::before { content: "/"; margin-right: 6px; color: var(--line); }
+.crumbs a { color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; }
+.crumbs a:hover, .crumbs a:focus-visible { color: var(--green-d); border-bottom-color: currentColor; }
+.crumbs li:last-child span { color: var(--ink); font-weight: 700; }
+
+/* ---------- The record itself ---------- */
+
+.d-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.d-card h1 { margin: 0 0 10px; font: 800 clamp(22px, 4.4vw, 32px)/1.2 var(--font-h); }
+.d-card h2 { margin: 26px 0 10px; font: 700 17px var(--font-h); }
+.d-card > .btn { margin-top: 22px; }
+
+/* A place's photo. 1.9:1 so it frames like the share card built from the same image. */
+.d-hero {
+  position: relative;
+  aspect-ratio: 1.9 / 1;
+  margin: -22px -22px 18px;
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  background: var(--soft);
+}
+
+/* A guide has an avatar instead, beside the name rather than above it. */
+.d-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.d-top h1 { margin: 0 0 6px; }
+.d-top .g-av { width: 72px; height: 72px; flex: none; border-radius: 50%; font-size: 22px; }
+
+.d-flag {
+  display: inline-block;
+  background: var(--mint);
+  color: var(--green-d);
+  font: 700 12px var(--font-b);
+  padding: 4px 11px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.d-lede { margin: 0 0 18px; font-size: 15.5px; line-height: 1.6; color: var(--ink); }
+
+/* ---------- Label/value pairs ---------- */
+
+.d-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+.d-facts dt { color: var(--muted); font-weight: 600; }
+.d-facts dd { margin: 0; font-weight: 700; }
+.d-facts a { color: var(--green-d); }
+
+/* ---------- Lists that link onward ---------- */
+
+.d-places, .d-guides { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.d-places a, .d-guides a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--soft-2);
+}
+.d-places a:hover, .d-guides a:hover,
+.d-places a:focus-visible, .d-guides a:focus-visible { border-color: var(--green-l); }
+
+.d-places .thumb { flex: none; width: 52px; height: 52px; border-radius: 10px; overflow: hidden; }
+.d-places .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.d-places a > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.d-places b { font: 700 14px var(--font-b); }
+.d-places a span span { font-size: 12.5px; color: var(--muted); }
+
+.d-guides a { justify-content: space-between; }
+.d-guides span { font-size: 12.5px; color: var(--muted); }
+
+/* The aimags a guide covers: chips, like the map's selection chips. */
+.d-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.d-chips a {
+  display: inline-block;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--green-d);
+  font: 700 13px var(--font-b);
+  text-decoration: none;
+}
+.d-chips a:hover, .d-chips a:focus-visible { background: var(--soft); }
+
+/* ---------- Slim footer ---------- */
+
+/* Not the home page's <Footer />: its links are all bare hashes into sections this page does
+ * not have. A way back and a line of credit is all a detail page needs. */
+.detail-foot { border-top: 1px solid var(--line); background: var(--paper); padding: 18px 0; }
+.detail-foot .wrap {
+  max-width: 860px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  font: 500 13px var(--font-b);
+  color: var(--muted);
+}
+.detail-foot a { color: var(--green-d); }
+
+/* ---------- The links added to the home page ---------- */
+
+/* On the info card, under the aimag's measurements. */
+.info-page {
+  display: inline-block;
+  margin: 2px 0 6px;
+  font: 700 13px var(--font-b);
+  color: var(--green-d);
+}
+
+/* Beside the must-see slide's map button, which keeps its own job. */
+.ms-link { margin-left: 14px; font: 700 13px var(--font-b); color: var(--green-d); }
+
+/* A place row's name and a guide card's name become links; they should not look like a
+ * different weight from the text they replaced. */
+.places b a, .g-top b a { color: inherit; text-decoration: none; }
+.places b a:hover, .g-top b a:hover,
+.places b a:focus-visible, .g-top b a:focus-visible { color: var(--green-d); text-decoration: underline; }
+
+@media (max-width: 560px) {
+  .d-card { padding: 16px; }
+  .d-hero { margin: -16px -16px 14px; }
+  .d-facts { grid-template-columns: 1fr; gap: 2px 0; }
+  .d-facts dt { margin-top: 8px; }
+  .ms-link { margin-left: 0; display: block; margin-top: 10px; }
+}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Montserrat, Playfair_Display } from 'next/font/google';
+import { DEFAULT_OG_IMAGE, HOME_TITLES, SITE_NAME, SITE_URL } from '../lib/seo';
 import './globals.css';
 // After globals.css on purpose: additions.css only styles elements the design never had,
 // and loading later means it can lean on the palette without fighting the cascade.
@@ -30,11 +31,29 @@ const playfair = Playfair_Display({
   display: 'swap',
 });
 
+const DESCRIPTION =
+  'Монголд аялах гэж буй дотоод болон гадаадын жуулчдад аяллын чиглэл, үзэсгэлэнт газрууд, '
+  + 'хөтөч болон аяллын компаниудын мэдээллийг нэг дороос олж, аяллаа төлөвлөхөд туслах веб платформ.';
+
 export const metadata: Metadata = {
-  title: 'АЯЛЪЯ ӨӨ | Монголын аяллын платформ',
-  description:
-    'Монголд аялах гэж буй дотоод болон гадаадын жуулчдад аяллын чиглэл, үзэсгэлэнт газрууд, ' +
-    'хөтөч болон аяллын компаниудын мэдээллийг нэг дороос олж, аяллаа төлөвлөхөд туслах веб платформ.',
+  /* Every relative URL in any page's metadata resolves against this — which is what makes an
+   * og:image absolute by the time a crawler reads it. It also settles which of the three
+   * hostnames the site answers on is the canonical one: aylayoo.com, not www and not the
+   * original workers.dev address. */
+  metadataBase: new URL(SITE_URL),
+  title: HOME_TITLES.mn,
+  description: DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: HOME_TITLES.mn,
+    description: DESCRIPTION,
+    url: '/',
+    siteName: SITE_NAME,
+    locale: 'mn_MN',
+    type: 'website',
+    images: [{ url: DEFAULT_OG_IMAGE, alt: SITE_NAME }],
+  },
+  twitter: { card: 'summary_large_image', title: HOME_TITLES.mn, description: DESCRIPTION },
 };
 
 export const viewport: Viewport = {

@@ -212,3 +212,14 @@ describe('the must-see carousel', () => {
     });
   });
 });
+
+describe('linking to a place\u2019s own page', () => {
+  it('offers a details link beside the button that retargets the map', () => {
+    setup(resource([PLAIN]));
+
+    expect(screen.getByRole('link', { name: 'Дэлгэрэнгүй' }).getAttribute('href'))
+      .toBe('/places/3');
+    // The map button keeps its own job rather than being replaced by the link.
+    expect(screen.getByRole('button', { name: 'Газрын зураг дээр харах' })).toBeTruthy();
+  });
+});

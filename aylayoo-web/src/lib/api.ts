@@ -29,6 +29,12 @@ export type Aimag = {
   areaKm2: number | null;
 };
 
+/** What `/api/aimags/:slug` returns: the aimag with its places embedded.
+ *
+ * Those places come from a plain select, so unlike `/api/places` they carry no `aimagSlug` /
+ * `aimagNameMn` / `aimagNameEn` — the aimag they belong to is the one you just asked for. */
+export type AimagWithPlaces = Aimag & { places: Place[] };
+
 export type Place = {
   id: number;
   aimagId: number;
@@ -159,6 +165,30 @@ export async function getGuides(options: { type?: GuideType; aimag?: string[] } 
   if (options.aimag?.length) query.set('aimag', options.aimag.join(','));
   return request<{ data: Guide[]; pagination: Pagination }>(`/api/guides?${query}`);
 }
+
+/* Single-resource reads, for the detail pages.
+ *
+ * These run on the server, so a row that is not there has to come back as a value rather than an
+ * exception: the page turns null into notFound(). Anything else still throws, because the API
+ * being down is a real error and must not render as a tidy "not found" page.
+ *
+ * A guide whose status is not `approved` 404s at the API, so it 404s here too — pending and
+ * rejected guides have no public page, which is the point. */
+async function one<T>(path: string): Promise<T | null> {
+  try {
+    return (await request<{ data: T }>(path)).data;
+  } catch (cause) {
+    if (cause instanceof ApiError && cause.status === 404) return null;
+    throw cause;
+  }
+}
+
+export const getGuide = (id: number) => one<Guide>(`/api/guides/${id}`);
+
+export const getPlace = (id: number) => one<Place>(`/api/places/${id}`);
+
+export const getAimag = (slug: string) =>
+  one<AimagWithPlaces>(`/api/aimags/${encodeURIComponent(slug)}`);
 
 export type ContactInput = {
   name: string;

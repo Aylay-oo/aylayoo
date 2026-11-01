@@ -314,3 +314,15 @@ describe('a guide from the tourism association roster', () => {
     expect(cards()[0].textContent).toContain('6 жил');
   });
 });
+
+describe('linking to a guide\u2019s own page', () => {
+  it('makes the name on each card a link to /guides/[id]', () => {
+    setup(resource([guide(7, 'Б. Болормаа', 'individual')]));
+
+    // The marquee renders clones, so the same link appears more than once; every copy must
+    // point at the same place, and the clones are already aria-hidden + inert on the article.
+    const links = screen.getAllByRole('link', { name: 'Б. Болормаа', hidden: true });
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link.getAttribute('href')).toBe('/guides/7');
+  });
+});

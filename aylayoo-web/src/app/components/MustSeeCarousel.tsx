@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Place } from '../../lib/api';
 import { useLang } from '../../lib/i18n';
@@ -184,6 +185,9 @@ export function MustSeeCarousel({ places }: { places: Resource<Place[]> }) {
             >
               {t('Газрын зураг дээр харах')}
             </button>
+            {/* The button retargets the map; this goes to the place's own page. Both are useful
+                from here, so neither replaces the other. */}
+            <Link className="ms-link" href={`/places/${place.id}`}>{t('Дэлгэрэнгүй')}</Link>
           </div>
 
           <div className="ms-ctrl">

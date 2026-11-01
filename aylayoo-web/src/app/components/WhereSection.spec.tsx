@@ -325,3 +325,38 @@ describe('travel modes', () => {
     expect(screen.getByText('Чингис хааны морьт хөшөө (Цонжин Болдог)')).toBeTruthy();
   });
 });
+
+describe('linking out of the info card', () => {
+  /* Scoped to the info card: the same aimag name is also a map shape and a checklist heading,
+   * and the same place name is also a checklist label.
+   *
+   * No click to select anything — the map starts on Bayankhongor, the way the design did, so
+   * clicking it here would deselect it and leave the card on its empty state. */
+  const info = () => document.querySelector('.info-card') as HTMLElement;
+
+  it('links each place to its own page', () => {
+    setup();
+
+    expect(within(info()).getByRole('link', { name: 'Их Богд уул' }).getAttribute('href'))
+      .toBe('/places/10');
+    expect(within(info()).getByRole('link', { name: 'Цагаан агуй' }).getAttribute('href'))
+      .toBe('/places/11');
+  });
+
+  it('links to the aimag’s own page', () => {
+    setup();
+
+    expect(within(info()).getByRole('link', { name: 'Аймгийн хуудас' }).getAttribute('href'))
+      .toBe('/aimags/bayankhongor');
+  });
+
+  it('follows the focus to another aimag', () => {
+    setup();
+    fireEvent.click(shape('Хөвсгөл'));
+
+    expect(within(info()).getByRole('link', { name: 'Аймгийн хуудас' }).getAttribute('href'))
+      .toBe('/aimags/khuvsgul');
+    expect(within(info()).getByRole('link', { name: 'Хөвсгөл нуур' }).getAttribute('href'))
+      .toBe('/places/20');
+  });
+});

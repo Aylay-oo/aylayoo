@@ -5,6 +5,7 @@ import {
 } from 'react';
 import { I18N_EN } from './i18n-dictionary';
 import { I18N_EXTRA } from './i18n-extra';
+import { HOME_TITLES, type PageTitles } from './seo';
 
 export type Lang = 'mn' | 'en';
 
@@ -94,7 +95,13 @@ type LangContextValue = {
 
 const LangContext = createContext<LangContextValue | null>(null);
 
-export function LangProvider({ children }: { children: ReactNode }) {
+/* `titles` exists because the effect below owns document.title outright. Before the detail
+ * pages that was harmless — there was one page, so one hard-coded pair would do — but on
+ * /places/42 it would overwrite the title the server rendered with the home page's, the moment
+ * the visitor touched the language switch. A page passes its own pair instead. */
+export function LangProvider(
+  { children, titles = HOME_TITLES }: { children: ReactNode; titles?: PageTitles },
+) {
   // Always start in Mongolian so the server's HTML and the first client render agree; the
   // stored choice is applied in the effect below, after hydration.
   const [lang, setLangState] = useState<Lang>('mn');
@@ -112,10 +119,10 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // globals.css keys off this: `html[lang="en"] .hero h1` drops the uppercase treatment.
     document.documentElement.lang = lang;
-    document.title = lang === 'en'
-      ? 'AYLAYOO | Travel in Mongolia'
-      : 'АЯЛЪЯ ӨӨ | Монголын аяллын платформ';
-  }, [lang]);
+    document.title = lang === 'en' ? titles.en : titles.mn;
+    // The two strings, not the object: a caller that builds `titles` inline would otherwise
+    // hand us a new identity on every render and re-run this forever.
+  }, [lang, titles.mn, titles.en]);
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);

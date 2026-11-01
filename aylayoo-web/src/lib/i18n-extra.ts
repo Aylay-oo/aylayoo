@@ -142,4 +142,29 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
    * change one string. */
   Испани: 'Spanish',
   Итали: 'Italian',
+
+  /* ---- the detail pages ----
+   * /guides/[id], /aimags/[slug] and /places/[id], plus the shared chrome and the 404. Most of
+   * what those pages print was already in the design's dictionary — "Төв:", "Талбай:", "Хэл:",
+   * "Аялж болох газрууд" — because the home page's info card says the same things. These are
+   * what is genuinely new. */
+  'Хуудасны зам': 'Breadcrumb',
+  'Нүүр хуудас руу буцах': 'Back to the home page',
+  'Дэлгэрэнгүй': 'Details',
+  'Аймгийн хуудас': 'Province page',
+  'Аймаг:': 'Province:',
+  'Төрөл:': 'Category:',
+  'Хамгийн таатай цаг:': 'Best time:',
+
+  /* The four place categories the API stores. Held in Mongolian so they reach t() as literals
+   * like every other label, rather than being translated by a second mechanism. */
+  'Байгаль': 'Nature',
+  'Түүх': 'History',
+  'Хот': 'City',
+  'Соёл': 'Culture',
+
+  /* ---- not found ---- */
+  'Хуудас олдсонгүй': 'Page not found',
+  'Хайсан хуудас байхгүй, эсвэл хаяг нь өөрчлөгдсөн байна.':
+    'That page does not exist, or its address has changed.',
 };

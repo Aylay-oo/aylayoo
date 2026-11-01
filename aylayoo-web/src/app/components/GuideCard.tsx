@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { imageUrl, type Guide } from '../../lib/api';
 import { useDialogs } from '../../lib/dialogs';
 import { useLang } from '../../lib/i18n';
@@ -61,7 +62,9 @@ export function GuideCard({ guide, coverage, clone = false }: GuideCardProps) {
           </div>
         )}
         <div>
-          <b>{guide.name}</b>
+          {/* A marquee clone carries aria-hidden and inert on the <article>, so the duplicate of
+              this link is already out of the tab order. */}
+          <b><Link href={`/guides/${guide.id}`}>{guide.name}</Link></b>
           <span className={`badge ${badgeClass(guide.type)}`}>{t(TYPE_LABEL[guide.type])}</span>
         </div>
       </div>

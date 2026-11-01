@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Aimag, Guide, Place } from '../../lib/api';
 import { avatarColor, initials } from '../../lib/format';
 import { useLang } from '../../lib/i18n';
@@ -108,6 +109,11 @@ export function InfoCard({
         )}
       </div>
 
+      {/* The aimag's own page, where the same places read as full entries with their own URLs. */}
+      {slug && (
+        <Link className="info-page" href={`/aimags/${slug}`}>{t('Аймгийн хуудас')}</Link>
+      )}
+
       <div className="info-sub">{t('Аялж болох газрууд')}</div>
       {placesLoading && <PlaceRowSkeletons />}
       {!placesLoading && placesError && (
@@ -130,7 +136,7 @@ export function InfoCard({
                     />
                   </span>
                   <div>
-                    <b>{name}</b>
+                    <b><Link href={`/places/${place.id}`}>{name}</Link></b>
                     <span>{pick(place.descriptionMn, place.descriptionEn)}</span>
                   </div>
                 </li>

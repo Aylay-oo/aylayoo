@@ -53,6 +53,14 @@
         "cwd": "apps/aylayoo/aylayoo-web"
       }
     },
+    "build-og-images": {
+      "executor": "nx:run-commands",
+      "options": {
+        "// why": "One-off: crops public/images/*.jpg into public/og/*.jpg at Open Graph's 1.905:1 for use as share cards. Already committed; re-run only if public/images changes. macOS only (uses sips).",
+        "command": "node scripts/build-og-images.mjs",
+        "cwd": "apps/aylayoo/aylayoo-web"
+      }
+    },
     "deploy": {
       "executor": "nx:run-commands",
       "dependsOn": [
