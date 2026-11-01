@@ -159,10 +159,13 @@ export function getPlaces(options: { mustSee?: boolean; aimag?: string; category
 /** The API caps `limit` at 50; the carousels want everyone, so ask for the maximum. */
 export const GUIDES_PAGE_LIMIT = 50;
 
-export async function getGuides(options: { type?: GuideType; aimag?: string[] } = {}) {
+export async function getGuides(
+  options: { type?: GuideType; aimag?: string[]; page?: number } = {},
+) {
   const query = new URLSearchParams({ limit: String(GUIDES_PAGE_LIMIT) });
   if (options.type) query.set('type', options.type);
   if (options.aimag?.length) query.set('aimag', options.aimag.join(','));
+  if (options.page && options.page > 1) query.set('page', String(options.page));
   return request<{ data: Guide[]; pagination: Pagination }>(`/api/guides?${query}`);
 }
 
@@ -173,7 +176,8 @@ export async function getGuides(options: { type?: GuideType; aimag?: string[] } 
  * being down is a real error and must not render as a tidy "not found" page.
  *
  * A guide whose status is not `approved` 404s at the API, so it 404s here too — pending and
- * rejected guides have no public page, which is the point. */
+ * rejected guides have no public page, which is the point.
+ */
 async function one<T>(path: string): Promise<T | null> {
   try {
     return (await request<{ data: T }>(path)).data;
