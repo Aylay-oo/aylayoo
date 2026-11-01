@@ -90,3 +90,25 @@ export function compareGuides(
     || (b.guide.reviewCount ?? 0) - (a.guide.reviewCount ?? 0)
   );
 }
+
+/* A website a guide typed, safe to put in an href — or null.
+ *
+ * `website` is filled in by whoever registers, and Zod's .url() accepts any parseable URL,
+ * including `javascript:alert(1)` and a `data:` document. Rendered straight into an href that is
+ * stored XSS: a click runs script on aylayoo.com, and on /admin it runs while an admin bearer
+ * token sits in sessionStorage. The API rejects a non-http(s) scheme now too; this guards rows
+ * stored before that and anything written to the database by hand.
+ *
+ * Returns the parsed href rather than the raw text so the link cannot point somewhere other than
+ * what it displays, which would be a phishing trick of its own.
+ */
+export function safeHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    // Not a URL at all — a bare "example.com", or nonsense.
+    return null;
+  }
+}

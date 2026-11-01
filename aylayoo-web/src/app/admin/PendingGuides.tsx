@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { ApiError, imageUrl } from '../../lib/api';
 import { ADMIN_TYPE_LABEL, getAdminGuides, setGuideStatus, type AdminGuide } from '../../lib/admin-api';
-import { avatarColor, badgeClass, initials, languageLabel } from '../../lib/format';
+import { avatarColor, badgeClass, initials, languageLabel, safeHttpUrl } from '../../lib/format';
 import { useResource } from '../../lib/use-resource';
 
 /* Registrations waiting for a decision.
@@ -154,13 +154,24 @@ export function PendingGuides({
                     </>
                   )}
 
+                  {/* Guarded, and it matters most here: this is an unreviewed registration,
+                      read on a screen that holds an admin token. A scheme safeHttpUrl rejects
+                      shows as plain text so the reviewer can still see what was submitted. */}
                   {guide.website && (
                     <>
                       <dt>Вэб</dt>
                       <dd>
-                        <a href={guide.website} target="_blank" rel="noreferrer noopener">
-                          {guide.website}
-                        </a>
+                        {safeHttpUrl(guide.website) ? (
+                          <a
+                            href={safeHttpUrl(guide.website) as string}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            {safeHttpUrl(guide.website)}
+                          </a>
+                        ) : (
+                          <span className="admin-unset">{guide.website}</span>
+                        )}
                       </dd>
                     </>
                   )}

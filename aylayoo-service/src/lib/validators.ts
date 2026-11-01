@@ -16,7 +16,19 @@ export const guideRegisterSchema = z
     aimagIds: z.array(z.number().int().positive()).min(1).max(22),
     phone: z.string().trim().min(6).max(30),
     email: z.string().trim().email(),
-    website: z.string().trim().url().optional().or(z.literal('')),
+    /* http(s) only. Zod's .url() accepts anything URL() parses, which includes
+     * `javascript:alert(1)` and a `data:` document — and this field is rendered as a link on the
+     * guide's public page and in the admin queue. The front end guards it as well, for rows
+     * stored before this and for anything inserted by hand. */
+    website: z
+      .string()
+      .trim()
+      .url()
+      .refine((value) => /^https?:$/.test(new URL(value).protocol), {
+        message: 'Website must be an http or https address',
+      })
+      .optional()
+      .or(z.literal('')),
     experienceYears: z.number().int().min(0).max(70).optional(),
     routeMn: optionalText(300),
     routeEn: optionalText(300),

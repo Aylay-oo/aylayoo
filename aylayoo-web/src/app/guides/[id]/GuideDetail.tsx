@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { imageUrl } from '../../../lib/api';
 import { DialogsProvider, useDialogs } from '../../../lib/dialogs';
 import type { GuideView } from './guide-view';
-import { avatarColor, badgeClass, experienceLabel, initials, languageLabel } from '../../../lib/format';
+import {
+  avatarColor, badgeClass, experienceLabel, initials, languageLabel, safeHttpUrl,
+} from '../../../lib/format';
 import { LangProvider, useLang } from '../../../lib/i18n';
 import { pageTitle } from '../../../lib/seo';
 import { TYPE_LABEL } from '../../../lib/static-data';
@@ -19,6 +21,8 @@ function Body({ guide }: { guide: GuideView }) {
   const photo = imageUrl(guide.photoUrl);
   const bio = pick(guide.bioMn, guide.bioEn);
   const route = pick(guide.routeMn, guide.routeEn);
+  // Never straight into an href — see safeHttpUrl.
+  const website = safeHttpUrl(guide.website);
 
   /* The roster records a band ("4-6 жил"); someone who registers gives a number. Same precedence
    * as GuideCard: whichever one the row actually has. */
@@ -84,11 +88,11 @@ function Body({ guide }: { guide: GuideView }) {
               <dd>{guide.car}</dd>
             </>
           )}
-          {guide.website && (
+          {website && (
             <>
               <dt>{t('Вэб сайт')}</dt>
               <dd>
-                <a href={guide.website} target="_blank" rel="noreferrer noopener">{guide.website}</a>
+                <a href={website} target="_blank" rel="noreferrer noopener">{website}</a>
               </dd>
             </>
           )}

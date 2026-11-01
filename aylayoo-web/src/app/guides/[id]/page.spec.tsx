@@ -189,6 +189,25 @@ describe('GuideDetail', () => {
       .toBe('/aimags/khuvsgul');
   });
 
+  it.each(['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'file:///etc/passwd'])(
+    'refuses to link a %s website',
+    (website) => {
+      // The field is self-registered and Zod's .url() accepts all of these, so an unguarded
+      // href here would be stored XSS on a page anyone can reach.
+      render(<GuideDetail guide={toGuideView(guide({ website }))} />);
+
+      expect(screen.queryByText('Вэб сайт')).toBeNull();
+      expect(document.querySelector(`a[href="${website}"]`)).toBeNull();
+    },
+  );
+
+  it('links a real website, normalised', () => {
+    render(<GuideDetail guide={toGuideView(guide({ website: 'https://example.com' }))} />);
+
+    expect(screen.getByRole('link', { name: 'https://example.com/' }).getAttribute('href'))
+      .toBe('https://example.com/');
+  });
+
   it('shows a car only for a driver', () => {
     render(<GuideDetail guide={toGuideView(guide({ type: 'driver', car: 'Land Cruiser 200' }))} />);
     expect(screen.getByText('Land Cruiser 200')).toBeTruthy();
