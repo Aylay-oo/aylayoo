@@ -1,3 +1,22 @@
+-- ############################################################################
+-- DO NOT RE-RUN THIS FILE. It is a one-shot import, written 2026-11-02 to be applied to
+-- production exactly once.
+--
+-- The guards below are `WHERE NOT EXISTS` on each row's own title (title_mn, or phrase_mn,
+-- or title_mn + topic). That makes a second run a no-op only for as long as nobody has
+-- renamed anything. Tested:
+--
+--   * a row EDITED in /admin, title unchanged  -> second run changes nothing. Safe.
+--   * a row RENAMED in /admin                  -> the guard stops matching, and the ORIGINAL
+--                                                 is inserted again as a draft, alongside
+--                                                 the renamed one.
+--   * a row DELETED in /admin                  -> comes back as a draft.
+--
+-- So once the team has started editing, a second run quietly duplicates whatever they
+-- renamed and undoes whatever they deleted. It is kept in the repo as the record of what was
+-- imported, not as something to run again. New content goes in through /admin.
+-- ############################################################################
+
 -- Phase 2 draft content for the Ulaanbaatar city section.
 --
 -- EVERY ROW HERE IS status = 'draft'. Nothing in this file is public the moment it lands;
