@@ -127,13 +127,13 @@ describe('the cycling headline', () => {
       fireEvent.click(screen.getByText('to-en'));
     });
 
-    expect(showing()).toBe('Aylya oo');
+    expect(showing()).toBe('Aylay oo');
     tick();
-    expect(showing()).toBe('Uulzya oo');
+    expect(showing()).toBe('Uulzay oo');
     tick();
-    expect(showing()).toBe('Amarya oo');
+    expect(showing()).toBe('Amray oo');
     expect(screen.getByRole('heading', { level: 1 }).textContent)
-      .toContain('Aylya oo, uulzya oo, amarya oo');
+      .toContain('Aylay oo, uulzay oo, amray oo');
   });
 
   it('stops while the tab is hidden and picks up where it left off', () => {

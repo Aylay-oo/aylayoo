@@ -125,7 +125,7 @@ h1,h2,h3,h4{font-family:var(--font-h);margin:0;line-height:1.15;letter-spacing:-
  * They travel in one direction: the next phrase rises in from below, the one it replaces
  * keeps going up and out. `.out` is the phrase the component just left, which is why there
  * are three states here and not two. No overflow:hidden, because a one-line-tall box clips
- * the descender in "Aylya oo" on the English side. */
+ * the descender in "Aylay oo" on the English side. */
 .hero-cycle{position:relative;display:block;height:1.02em}
 .hero-cycle > span{position:absolute;left:0;top:0;white-space:nowrap;opacity:0;transform:translateY(.34em);transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
 .hero-cycle > span.on{opacity:1;transform:translateY(0)}

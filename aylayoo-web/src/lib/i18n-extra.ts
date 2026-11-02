@@ -13,9 +13,9 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
    * The design's dictionary has the whole line, because the mockup showed it whole. The
    * headline now cycles one phrase at a time, so each phrase needs its own entry; the
    * romanisation is the one the full line already uses. */
-  'Аялъя өө': 'Aylya oo',
-  'Уулзъя өө': 'Uulzya oo',
-  'Амаръя өө': 'Amarya oo',
+  'Аялъя өө': 'Aylay oo',
+  'Уулзъя өө': 'Uulzay oo',
+  'Амаръя өө': 'Amray oo',
 
   /* ---- day trips from Ulaanbaatar ----
    * Names and blurbs for the trip cards. They reach t() as `t(trip.name)` rather than as

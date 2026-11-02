@@ -16,7 +16,7 @@
 --   * Only name_mn / description_mn / must_summary_mn / body_mn are touched. The _en columns,
 --     ratings, guides, aimags and team_members are not read or written.
 --
--- The slogan fix ("Аялая өө" → "Аялъя өө") is NOT here: the slogan lives only in the web app
+-- The slogan spelling fix is NOT in here either: the slogan lives only in the web app
 -- and the design mockup, never in the database.
 
 -- ---------- 1. places.name_mn — spelling and proper-name capitalisation ----------
