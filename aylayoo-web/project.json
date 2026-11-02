@@ -66,9 +66,10 @@
       "dependsOn": [
         "lint"
       ],
+      "// why the URL is not ${VAR:-default}": "It used to be, and that shipped a production bundle pointing at http://localhost:4003 on 2026-11-02. Nx loads .env files and injects them into the environment of the command it spawns, so a developer's apps/aylayoo/aylayoo-web/.env.local set NEXT_PUBLIC_API_URL before the shell evaluated the default, and `:-` never fired. NEXT_PUBLIC_API_URL is inlined into the client bundle by `next build`, so the live site loaded with every API-backed section empty. Set unconditionally here: a deploy must not depend on which .env files happen to be on the machine. To build against a different API, change this line or use the preview target.",
       "options": {
         "commands": [
-          "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
+          "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev bunx next build",
           "bunx opennextjs-cloudflare build --skipNextBuild",
           "bunx opennextjs-cloudflare deploy"
         ],
