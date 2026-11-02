@@ -1,5 +1,6 @@
 import type { Aimag, Guide, Pagination, Place } from '../lib/api';
-import { ApiError, getAimags, getGuides, getPlaces } from '../lib/api';
+import { ApiError } from '../lib/api';
+import { getAimags, getGuides, getPlaces } from '../lib/api-server';
 import robots from './robots';
 import sitemap from './sitemap';
 
@@ -7,8 +8,8 @@ import sitemap from './sitemap';
  * discoverable before anything links to them, so what it does when the API misbehaves matters as
  * much as what it lists when everything works. */
 
-jest.mock('../lib/api', () => {
-  const actual = jest.requireActual('../lib/api');
+jest.mock('../lib/api-server', () => {
+  const actual = jest.requireActual('../lib/api-server');
   return { ...actual, getAimags: jest.fn(), getPlaces: jest.fn(), getGuides: jest.fn() };
 });
 
@@ -100,7 +101,7 @@ describe('sitemap', () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(mockGuides).toHaveBeenCalledTimes(3);
-    expect(mockGuides).toHaveBeenNthCalledWith(2, { page: 2 });
+    expect(mockGuides).toHaveBeenNthCalledWith(2, 2);
     expect(urls).toContain('https://aylayoo.com/guides/2');
     expect(urls).toContain('https://aylayoo.com/guides/3');
   });

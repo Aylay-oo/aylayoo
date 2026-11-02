@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { getAimag, getGuides, type AimagWithPlaces, type Guide } from '../../../lib/api';
+import type { AimagWithPlaces, Guide } from '../../../lib/api';
+import { getAimag, getGuidesForAimag } from '../../../lib/api-server';
 import { photoKey } from '../../../lib/photos';
 import { REGION, REGION_OF_API } from '../../../lib/static-data';
 import { DEFAULT_OG_IMAGE, detailMetadata, notFoundMetadata, ogCard } from '../../../lib/seo';
@@ -17,7 +18,7 @@ const loadAimag = cache((slug: string) => getAimag(slug));
 
 const loadGuides = cache(async (slug: string): Promise<Guide[]> => {
   try {
-    return (await getGuides({ aimag: [slug] })).data;
+    return (await getGuidesForAimag(slug)).data;
   } catch {
     // A guide list that will not load must not take the aimag's own page down with it.
     return [];

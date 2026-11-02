@@ -1,19 +1,20 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { AimagWithPlaces, Guide, Place } from '../../../lib/api';
-import { ApiError, getAimag, getGuides } from '../../../lib/api';
+import { ApiError } from '../../../lib/api';
+import { getAimag, getGuidesForAimag } from '../../../lib/api-server';
 import { AimagDetail } from './AimagDetail';
 import { generateMetadata } from './page';
 
 /* A different slug per test: page.tsx memoises its loaders with React's cache(), which outside a
  * real request has no per-request boundary to be cleared at. */
 
-jest.mock('../../../lib/api', () => {
-  const actual = jest.requireActual('../../../lib/api');
-  return { ...actual, getAimag: jest.fn(), getGuides: jest.fn() };
+jest.mock('../../../lib/api-server', () => {
+  const actual = jest.requireActual('../../../lib/api-server');
+  return { ...actual, getAimag: jest.fn(), getGuidesForAimag: jest.fn() };
 });
 
 const mockGetAimag = jest.mocked(getAimag);
-const mockGetGuides = jest.mocked(getGuides);
+const mockGetGuides = jest.mocked(getGuidesForAimag);
 
 function place(over: Partial<Place> = {}): Place {
   return {

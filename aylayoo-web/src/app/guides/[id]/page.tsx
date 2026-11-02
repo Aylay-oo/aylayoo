@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { getGuide, imageUrl, type Guide } from '../../../lib/api';
+import { imageUrl, type Guide } from '../../../lib/api';
+import { getGuide } from '../../../lib/api-server';
 import { TYPE_LABEL } from '../../../lib/static-data';
 import { DEFAULT_OG_IMAGE, detailMetadata, notFoundMetadata, routeId } from '../../../lib/seo';
 import { GuideDetail } from './GuideDetail';

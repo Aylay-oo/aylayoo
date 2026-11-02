@@ -13,6 +13,16 @@
     "binding": "ASSETS",
   },
 
+  /* The API, reached without leaving Cloudflare's network.
+   *
+   * Not a convenience: a Worker cannot fetch another Worker's *.workers.dev hostname on the
+   * same account. The edge answers 403 and the request never arrives — confirmed by tailing
+   * aylayoo-service while loading /places/1, which logged nothing at all. The browser is
+   * unaffected and still calls the public URL, which is why only server-rendered reads need
+   * this. It is also a direct hop, so it skips a public round trip.
+   */
+  "services": [{ "binding": "API", "service": "aylayoo-service" }],
+
   // NEXT_PUBLIC_API_URL is deliberately NOT a var here. It is inlined into the client bundle
   // by `next build`, so it has to be in the environment at build time — a Worker var would
   // arrive far too late to matter. See the README's deploy section.

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Place } from '../../../lib/api';
-import { getPlace } from '../../../lib/api';
+import { getPlace } from '../../../lib/api-server';
 import { generateMetadata } from './page';
 import { PlaceDetail } from './PlaceDetail';
 
@@ -15,8 +15,10 @@ import { PlaceDetail } from './PlaceDetail';
  * be cleared at — so reusing an id would hand the next test the previous test's place.
  */
 
-jest.mock('../../../lib/api', () => {
-  const actual = jest.requireActual('../../../lib/api');
+/* api-server, not api: the page reads through the service binding on Cloudflare, because a
+ * Worker cannot fetch another Worker's workers.dev hostname. */
+jest.mock('../../../lib/api-server', () => {
+  const actual = jest.requireActual('../../../lib/api-server');
   return { ...actual, getPlace: jest.fn() };
 });
 

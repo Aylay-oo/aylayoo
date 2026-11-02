@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { getAimags, getGuides, getPlaces, type Guide } from '../lib/api';
+import type { Guide } from '../lib/api';
+import { getAimags, getGuides, getPlaces } from '../lib/api-server';
 import { SITE_URL } from '../lib/seo';
 
 /* /sitemap.xml
@@ -33,7 +34,7 @@ async function allGuides(): Promise<Guide[]> {
   const pages = Math.min(first.pagination.totalPages, MAX_GUIDE_PAGES);
 
   for (let page = 2; page <= pages; page += 1) {
-    guides.push(...(await getGuides({ page })).data);
+    guides.push(...(await getGuides(page)).data);
   }
   return guides;
 }

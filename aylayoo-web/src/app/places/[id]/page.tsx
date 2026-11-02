@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { getPlace, type Place } from '../../../lib/api';
+import type { Place } from '../../../lib/api';
+import { getPlace } from '../../../lib/api-server';
 import { photoKey } from '../../../lib/photos';
 import { detailMetadata, notFoundMetadata, ogCard, routeId } from '../../../lib/seo';
 import { PlaceDetail } from './PlaceDetail';

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Guide } from '../../../lib/api';
-import { getGuide } from '../../../lib/api';
+import { getGuide } from '../../../lib/api-server';
 import { GuideDetail } from './GuideDetail';
 import { toGuideView } from './guide-view';
 import { generateMetadata } from './page';
@@ -8,8 +8,8 @@ import { generateMetadata } from './page';
 /* A different id per test: page.tsx memoises its loader with React's cache(), which outside a
  * real request has no per-request boundary to be cleared at. */
 
-jest.mock('../../../lib/api', () => {
-  const actual = jest.requireActual('../../../lib/api');
+jest.mock('../../../lib/api-server', () => {
+  const actual = jest.requireActual('../../../lib/api-server');
   return { ...actual, getGuide: jest.fn() };
 });
 
