@@ -155,3 +155,175 @@ export const admins = sqliteTable('admins', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
 });
+
+/* ---------------------------------------------------------------------------
+ * Phase 2 — the Ulaanbaatar city section.
+ *
+ * Six tables the team edits from /admin → "Хот". Everything here is editorial content about
+ * the capital rather than a record of a real person or business, with one rule in common:
+ * a row is private until somebody publishes it, so the public API only ever serves
+ * `status = 'published'`.
+ * ------------------------------------------------------------------------- */
+
+// A row is a draft until an admin publishes it. Only "published" reaches the public API.
+export const CITY_STATUSES = ['draft', 'published'] as const;
+
+/* When during the day a stop is meant to happen. An itinerary's stops carry one; a walking
+ * route's do not, because a route is walked in one go. */
+export const TIMES_OF_DAY = ['morning', 'midday', 'afternoon', 'evening'] as const;
+
+// The four topics the practical guide is grouped by, as the brief names them.
+export const TIP_TOPICS = ['transport', 'money', 'weather', 'etiquette'] as const;
+
+/* The phrasebook's section headings.
+ *
+ * An enum rather than a Mongolian/English text pair on the row, unlike city_food.category:
+ * these six are UI furniture — the headings the phrasebook groups under — so they belong in
+ * the front end's dictionary where they translate like every other label. Storing them per
+ * row would let two phrases spell the same heading differently and split the group in two.
+ * A restaurant's category is the opposite case: there the team should be free to type
+ * whatever a place actually is, so that one is text in both languages. */
+export const PHRASE_CATEGORIES = [
+  'greetings', 'basics', 'food', 'directions', 'numbers', 'emergency',
+] as const;
+
+/** 1 = cheap, 2 = mid-range, 3 = expensive. Null when nobody has filled it in. */
+export const PRICE_LEVELS = [1, 2, 3] as const;
+
+/** How many days an itinerary covers. */
+export const ITINERARY_DAYS = [1, 2, 3] as const;
+
+export type CityStatus = (typeof CITY_STATUSES)[number];
+export type TimeOfDay = (typeof TIMES_OF_DAY)[number];
+export type TipTopic = (typeof TIP_TOPICS)[number];
+export type PhraseCategory = (typeof PHRASE_CATEGORIES)[number];
+export type PriceLevel = (typeof PRICE_LEVELS)[number];
+export type ItineraryDays = (typeof ITINERARY_DAYS)[number];
+
+/* One stop on an itinerary or a walking route.
+ *
+ * Stored as a JSON array on the parent row rather than in a child table, the same way
+ * `places.images` and `guides.languages` already are. The order *is* the data here — a route
+ * is its sequence of stops — and a JSON array keeps that in one column, so reordering is a
+ * single UPDATE instead of one per stop. It also means the whole route arrives in the request
+ * that fetched the route, with no join and no second query.
+ *
+ * `lat`/`lng` are optional for the same reason they are on `places`: the front end's map falls
+ * back to the ordered list when a stop has no coordinates, and guessing one would put a marker
+ * somewhere the stop is not. */
+export type CityStop = {
+  placeMn: string;
+  placeEn: string;
+  /** Itineraries set this; walking routes leave it null. */
+  timeOfDay: TimeOfDay | null;
+  noteMn: string | null;
+  noteEn: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+/** A 1-, 2- or 3-day plan for the city, as an ordered list of stops. */
+export const cityItineraries = sqliteTable('city_itineraries', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  titleMn: text('title_mn').notNull(),
+  titleEn: text('title_en').notNull(),
+  days: integer('days').notNull(),
+  summaryMn: text('summary_mn'),
+  summaryEn: text('summary_en'),
+  stops: text('stops', { mode: 'json' }).$type<CityStop[]>().notNull().default(sql`'[]'`),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+/* A themed walking route — "Буддын Улаанбаатар", "Социализмын үеийн Улаанбаатар".
+ *
+ * `summary` is not in the original brief but the route's own page needs it: a <meta
+ * description> and an Open Graph card want a sentence, and a title is not one. */
+export const cityRoutes = sqliteTable('city_routes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  titleMn: text('title_mn').notNull(),
+  titleEn: text('title_en').notNull(),
+  summaryMn: text('summary_mn'),
+  summaryEn: text('summary_en'),
+  stops: text('stops', { mode: 'json' }).$type<CityStop[]>().notNull().default(sql`'[]'`),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+/* Where to eat.
+ *
+ * Ships empty on purpose: a restaurant, its prices and its opening hours are facts about a
+ * real business, and inventing them would put wrong information about somebody else's
+ * livelihood on the site. The team fills this in from /admin. */
+export const cityFood = sqliteTable('city_food', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nameMn: text('name_mn').notNull(),
+  nameEn: text('name_en').notNull(),
+  categoryMn: text('category_mn'),
+  categoryEn: text('category_en'),
+  knownForMn: text('known_for_mn'),
+  knownForEn: text('known_for_en'),
+  areaMn: text('area_mn'), // the district or street address
+  areaEn: text('area_en'),
+  priceLevel: integer('price_level'), // 1–3, or null when unknown
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+/** The practical guide: getting around, money, what to wear, how to behave. */
+export const cityTips = sqliteTable('city_tips', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  topic: text('topic', { enum: TIP_TOPICS }).notNull(),
+  titleMn: text('title_mn').notNull(),
+  titleEn: text('title_en').notNull(),
+  bodyMn: text('body_mn').notNull(),
+  bodyEn: text('body_en').notNull(),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+/* The phrasebook.
+ *
+ * Three columns rather than an MN/EN pair, because the split is the content: `phraseMn` is
+ * what to say, `pronunciation` is how to say it in Latin letters, `meaningEn` is what it
+ * means. A `status` so the first set can be reviewed before it goes public — the brief did
+ * not list one, but it also asked for the starting phrases as drafts. */
+export const phrases = sqliteTable('phrases', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  phraseMn: text('phrase_mn').notNull(),
+  pronunciation: text('pronunciation').notNull(),
+  meaningEn: text('meaning_en').notNull(),
+  category: text('category', { enum: PHRASE_CATEGORIES }).notNull(),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
+
+/* What is on in the city.
+ *
+ * Dates are TEXT in YYYY-MM-DD, not unix timestamps: an event runs for whole local days, and
+ * a timestamp would invite a timezone to shift "this week" by one. `endDate` is null for a
+ * single-day event, so a query for what is still running compares against
+ * COALESCE(end_date, start_date).
+ *
+ * Also ships empty — an event nobody told us about is not a fact. */
+export const cityEvents = sqliteTable('city_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  titleMn: text('title_mn').notNull(),
+  titleEn: text('title_en').notNull(),
+  startDate: text('start_date').notNull(), // YYYY-MM-DD
+  endDate: text('end_date'), // null = a single day
+  placeMn: text('place_mn'),
+  placeEn: text('place_en'),
+  descriptionMn: text('description_mn'),
+  descriptionEn: text('description_en'),
+  /* http(s) only, enforced by the same Zod rule as guides.website — this is rendered as a
+   * link, and `javascript:` parses as a URL. */
+  link: text('link'),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
