@@ -122,6 +122,7 @@ Whenever you change `src/db/schema.ts` later: run `drizzle-kit generate` again, 
 |---|---|
 | `0000_daily_charles_xavier.sql` | the original 8 tables |
 | `0002_same_impossible_man.sql` | `guides.full_name` and `guides.experience_range`. The tourism association's roster records experience as a band ("4-6 жил"), not a number, so it gets its own column rather than being forced into `experience_years` — turning a band into a number would invent a fact about a real person. A guide has one or the other, never both. |
+| `0003_wakeful_hellcat.sql` | the Ulaanbaatar city section: `city_itineraries`, `city_routes`, `city_food`, `city_tips`, `phrases`, `city_events`. Pure `CREATE TABLE` — no table rebuild, so the drizzle-kit `INSERT … SELECT` bug below does not apply. Ordered stops live in a JSON column on the itinerary or route rather than a child table: the order *is* the data, so one column keeps a reorder to a single `UPDATE` and brings the whole route back with the row. |
 | `0001_great_leper_queen.sql` | everything the front-end design needs: `driver` guide type support (`experience_years`, `route_mn/en`, `car`, nullable `rating`/`review_count`), aimag `iso_code`/`center_mn/en`/`area_km2`, place `image_key`/`best_months_*`/`must_title_*`/`must_summary_*` and **nullable `lat`/`lng`**, team `name_en`/`role_en`/`school_*`/`description_*`, and contact `phone`/`guide_id`/`subject`/`kind` with **nullable `email`**. Rebuilds `places` and `contact_messages`. |
 
 ### Seeds
@@ -254,6 +255,78 @@ All responses are JSON. Lists look like `{ "data": [...] }`, errors like `{ "err
 | GET | `/api/facts` | traveler facts |
 | GET | `/api/team` | team members, Mongolian + English |
 | GET | `/api/images/*` | serves uploaded images (use the `photoUrl` you get back) |
+
+### The Ulaanbaatar city section (Phase 2)
+
+Six resources behind `/api/city`, all editable from `/admin` → **Хот**. Every one of these
+returns **only `status = 'published'`** rows, ordered by `sort_order` then `id`.
+
+| Method | URL | Notes |
+|---|---|---|
+| GET | `/api/city/itineraries` | query: `days` (1, 2 or 3). An out-of-range `days` is ignored rather than refused, so a stale link still shows the list |
+| GET | `/api/city/itineraries/:id` | 404 for a draft as well as for a missing row — a draft has no public page, which is the point |
+| GET | `/api/city/routes` | themed walking routes |
+| GET | `/api/city/routes/:id` | |
+| GET | `/api/city/food` | **empty until the team fills it in.** See the note below |
+| GET | `/api/city/tips` | the practical guide, one flat list; the front end groups it by `topic` |
+| GET | `/api/city/phrases` | |
+| GET | `/api/city/events` | published and not finished yet, soonest first. **Empty until the team adds events** |
+
+An itinerary and a route each carry their stops as a JSON array in `stops`, in order:
+
+```json
+{
+  "placeMn": "Гандан хийд", "placeEn": "Gandan Monastery",
+  "timeOfDay": "morning",
+  "noteMn": "…", "noteEn": "…",
+  "lat": 47.9212, "lng": 106.8944
+}
+```
+
+`timeOfDay` is one of `morning` / `midday` / `afternoon` / `evening`; itineraries use it and
+walking routes leave it `null`. `lat`/`lng` are both-or-neither (a half coordinate is a 400) and
+may be `null` — the front end's route map falls back to the ordered list for a stop without
+them, which is better than putting a marker where the stop is not. Coordinates are bounded to
+Ulaanbaatar itself, not the country: a city stop at 45°N is a typo, and letting it through would
+stretch the map's viewBox across Mongolia.
+
+#### Food and events ship empty, on purpose
+
+A restaurant's prices and opening hours, and whether an event is happening, are facts about
+other people's businesses and plans. Making them up would put wrong information on the site
+about somebody else's livelihood and send visitors across town for nothing. Both tables are
+created empty, the front end has a real empty state for each, and the team adds the rows in
+`/admin`.
+
+### Admin — the city section (header `Authorization: Bearer <token>`)
+
+`<kind>` is one of `itineraries`, `routes`, `food`, `tips`, `phrases`, `events`.
+
+| Method | URL | Notes |
+|---|---|---|
+| GET | `/api/admin/city/<kind>` | **both** statuses — this is the screen where a draft is reviewed |
+| POST | `/api/admin/city/<kind>` | a new row is a **draft** unless it sends `status: "published"` |
+| PUT | `/api/admin/city/<kind>/:id` | every field optional; send only what changed |
+| DELETE | `/api/admin/city/<kind>/:id` | |
+| PATCH | `/api/admin/city/<kind>/reorder` | `{ "ids": [3, 1, 2] }` — the whole visible list, in the order it should appear. `sort_order` becomes each row's index |
+
+Two rules these share with the rest of the admin API, both worth knowing before you add a
+seventh resource in `src/routes/admin-city.ts`:
+
+- **A PUT only touches the fields it sends.** The update schemas deliberately carry no Zod
+  `.default()`, because `.partial()` leaves a default in place and would re-apply it on every
+  PUT that omitted the field. The column defaults do that job instead. The comment above the
+  city schemas in `src/lib/validators.ts` has the bug this prevented — publishing a row by
+  sending `{"status":"published"}` used to empty its stops.
+- **An empty `{}` PUT is a 400**, not a no-op: it would reach drizzle as an UPDATE with nothing
+  to SET.
+- **`reorder` refuses the whole request** if any id is unknown, rather than reordering the ones
+  that exist — a partial reorder leaves the list in an order the admin never chose and cannot
+  see is wrong.
+
+`city_events.link` takes **http(s) only**, the same rule as `guides.website` and now the same
+code: `httpUrl()` in `src/lib/validators.ts`. Zod's `.url()` accepts `javascript:alert(1)`, and
+this field is rendered as a link.
 
 ### Guide types
 

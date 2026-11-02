@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { adminRoutes } from './routes/admin';
 import { aimagRoutes } from './routes/aimags';
+import { cityRoutesApi } from './routes/city';
 import { contactRoutes } from './routes/contact';
 import { contentRoutes } from './routes/content';
 import { guideRoutes } from './routes/guides';
@@ -50,6 +51,7 @@ app.get('/', (c) => c.json({ name: 'aylayoo-service', status: 'ok' }));
 app.route('/api/aimags', aimagRoutes);
 app.route('/api/places', placeRoutes);
 app.route('/api/guides', guideRoutes);
+app.route('/api/city', cityRoutesApi); // the Ulaanbaatar section: itineraries, routes, food, tips, phrases, events
 app.route('/api/contact', contactRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api', contentRoutes); // /api/facts, /api/team, /api/images/*

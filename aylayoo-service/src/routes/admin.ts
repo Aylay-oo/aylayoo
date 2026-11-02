@@ -13,6 +13,7 @@ import {
   teamMemberSchema,
 } from '../lib/validators';
 import type { AppEnv } from '../types';
+import { adminCityRoutes } from './admin-city';
 import { attachAimags } from './guides';
 
 export const adminRoutes = new Hono<AppEnv>();
@@ -34,6 +35,10 @@ adminRoutes.post('/login', rateLimit({ name: 'login', limit: 10, windowSeconds: 
 
 // Everything below needs:  Authorization: Bearer <token>
 adminRoutes.use('*', requireAdmin);
+
+/* The Ulaanbaatar section's six resources, mounted here rather than in index.ts so they
+ * inherit the middleware above instead of repeating it. */
+adminRoutes.route('/city', adminCityRoutes);
 
 // ---------- Guides ----------
 // GET /api/admin/guides?status=pending
