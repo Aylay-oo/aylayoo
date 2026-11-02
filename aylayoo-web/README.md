@@ -42,6 +42,7 @@ Or with Nx from the repo root: `bunx nx run aylayoo-web:dev`.
 | `src/lib/static-data.ts` | map shapes, Ulaanbaatar tiles, nearby trips, avatar colours. Drawing instructions and editorial copy, not records — everything that *is* a record comes from the API. |
 | `src/lib/i18n*.ts` | the design's 397-entry dictionary, its runtime patterns, and the strings it never needed because it had no backend. |
 | `src/lib/photos.ts` | the design's photo lookup, unchanged, over real files in `public/images`. |
+| `src/lib/city-labels.ts` | the Ulaanbaatar section's headings and its event date formatting. Separate from the i18n dictionary because these reach `t()` as variables, which `i18n-coverage.spec.ts` cannot see — `city-labels.spec.ts` covers them instead. |
 
 The photos are JPEG rather than WebP: `sips` on macOS reads WebP but cannot write it, and
 adding an encoder would mean a new root dependency. `next/image` re-encodes on delivery, so
@@ -127,6 +128,53 @@ builds and deploys there unchanged, because nothing it needs lives above its own
 cd aylayoo-web && bun install && bun run cf:deploy
 ```
 
+## /ulaanbaatar
+
+The city section, added in Phase 2 and fed by the six `city_*` tables in
+[aylayoo-service](../aylayoo-service/README.md#the-ulaanbaatar-city-section-phase-2). Linked
+from the header nav and from the home page's **Хотоор аялах** card.
+
+Six tabs, each owning its own fetch so one slow or failed endpoint empties its own panel and
+nothing else: itineraries (filtered 1/2/3 days **by the API**, not in the browser), walking
+routes, food, the practical guide, the phrasebook, and what is on. Only the open tab is
+mounted, so arriving fires one request rather than six — and coming back to a tab refetches,
+which is what you want from a page the team edits live.
+
+Every itinerary and route also has its own page under `/ulaanbaatar/itineraries/[id]` and
+`/ulaanbaatar/routes/[id]`, shaped exactly like `/places/[id]`, and both are in the sitemap.
+A **draft 404s**: the API only serves published rows, so a draft has no public page even if
+somebody guesses its id.
+
+### The route map has no map library
+
+`components/StopMap.tsx` draws a walking route as inline SVG, the same way `MongoliaMap.tsx`
+draws the country. It projects the stops' coordinates into a viewBox fitted to the route's own
+bounding box, and squashes longitude by `cos(latitude)` — without that a route comes out
+stretched east-west and a square block looks like a wide rectangle.
+
+Deliberately no tiles and no dependency: this app has three runtime dependencies, every page is
+built to render with the API down, and a tile layer would add a third-party request per view
+plus an SSR-unsafe import. The trade is that there are no streets behind the route.
+
+The SVG is `aria-hidden` and the ordered `<StopList>` beside it is the content — which is also
+what a route whose stops have no coordinates falls back to, since `StopMap` then renders
+nothing at all. A stop is numbered by its position in the **whole** route, so stop 3 reads "3"
+on the map even where stop 2 could not be plotted, and the caption says how many of the stops
+are shown.
+
+### Food and events are empty on purpose
+
+A restaurant's prices and opening hours, and whether an event is really happening, are facts
+about other people's businesses and plans. Both tabs ship with an empty state that says the
+team is still adding them — written to be read, since for now it is what a visitor sees.
+
+### The phrasebook ignores the language switch
+
+It shows the Cyrillic, the Latin pronunciation and the English all at once in both languages.
+Hiding the English would make it useless to the Mongolian speaker teaching a visitor to say
+something; hiding the Cyrillic would leave nothing to point at. It is the one part of the site
+that does not use `pick()`.
+
 ## /admin
 
 A review screen at `/admin`, deliberately **not linked from the public site** and marked
@@ -140,6 +188,23 @@ A review screen at `/admin`, deliberately **not linked from the public site** an
   roster of 50 guides records neither: a guide with no province appears in the site's
   carousel but can never be recommended by the map, which matches on province. The header
   counts how many are still unassigned.
+- **Хот** — everything the Ulaanbaatar section shows: create, edit, publish/unpublish, delete
+  and reorder itineraries, walking routes, places to eat, practical tips, phrases and events,
+  plus the stops inside an itinerary or a route.
+
+  The editors are **field-driven**: `admin/city/resources.ts` declares each resource's columns
+  and `CityEditor` renders them. Six hand-written screens would be thirty inputs of identical
+  wiring, with no way to see at a glance that `city_food.priceLevel` is bound to the right
+  column. A field's `key` *is* the API column name, so a typo there is a 400 naming the field
+  rather than a silent write to the wrong place.
+
+  Two rules worth knowing before changing it. Form values are held as strings and converted
+  once on save, which is what lets a number box be genuinely empty — a price level nobody has
+  checked must stay `NULL`, not become `0`. And clearing an optional field sends an explicit
+  `null`, because the API leaves an absent field alone; without that, emptying a summary would
+  silently keep the old text. Publishing goes through `setCityStatus`, which sends only
+  `{ status }` for the same reason.
+
 - **Мессежүүд** — contact and booking messages, newest first.
 
 Rows with nothing in them are left out rather than printed with a dash, since the roster
@@ -180,8 +245,13 @@ that needs a consent banner.
   by hand did not hold.
 - `src/app/components/accessibility.spec.ts` asserts the whole-page invariants: every control
   has an accessible name, every image an alt, every toggle a reported state.
-- `src/app/admin/page.spec.tsx` covers the only screen that can change what the public site
-  shows.
+- `src/app/admin/page.spec.tsx` and `src/app/admin/city/CityTab.spec.tsx` cover the screens
+  that can change what the public site shows.
+- `src/app/components/StopMap.spec.tsx` pins the route map's geometry, including that a route
+  which is square on the ground plots square on screen. The map is silent when it is wrong — a
+  squashed route still looks like a plausible picture — so this is checked rather than eyeballed.
+- `src/lib/city-labels.spec.ts` is the city section's equivalent of `trips.spec.ts`: the
+  headings there reach `t()` as variables, so the i18n coverage scan cannot see them.
 
 jsdom lacks `matchMedia`, `ResizeObserver`, `PointerEvent` coordinates and `HTMLDialogElement`
 methods; `jest-setup.ts` fills the first two and the specs stub the rest where needed.
