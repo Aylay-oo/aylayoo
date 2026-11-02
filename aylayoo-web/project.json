@@ -78,8 +78,9 @@
     },
     "preview": {
       "executor": "nx:run-commands",
+      "// why": "Runs the built Worker locally in workerd, which is the only way to see what Cloudflare will actually serve. Points at the live API, because that is what the production bundle is built against.",
+      "// why not in options": "nx:run-commands forwards any key it does not recognise in `options` to the command line, so a comment key there became `bunx next build --// why=...` and the build failed with `unknown option '--//'`. At target level it is ignored. The `deploy` target has no comment inside `options`, which is why only `preview` broke.",
       "options": {
-        "// why": "Runs the built Worker locally in workerd, which is the only way to see what Cloudflare will actually serve. Points at the live API, because that is what the production bundle is built against.",
         "commands": [
           "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
           "bunx opennextjs-cloudflare build --skipNextBuild",
