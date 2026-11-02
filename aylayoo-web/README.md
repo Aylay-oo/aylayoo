@@ -156,6 +156,21 @@ For local testing there is already an admin in the **local** D1:
 `admin@local.test` / `local-dev-only-password`. It exists only in `.wrangler/` state on this
 machine and is not in any seed file or migration.
 
+## Analytics
+
+Cloudflare Web Analytics, enabled for `aylayoo.com` through the dashboard's **automatic setup**
+(Analytics & Logs → Web Analytics). Cloudflare injects the beacon at the edge after the Worker
+responds, so there is nothing to do in this app and nothing to deploy — the dashboard reports
+visits, page load time and Core Web Vitals already.
+
+**There is deliberately no beacon in the code**, and no `NEXT_PUBLIC_CF_BEACON_TOKEN`. An app-side
+`<script>` on top of the automatic injection would load the beacon twice and double-count every
+page view. One was built and then removed for exactly that reason; if you are about to add one,
+check the dashboard first — it is probably already collecting.
+
+No cookies, no `localStorage` and no cross-site identifiers either way, so there is nothing here
+that needs a consent banner.
+
 ## Tests
 
 `nx run aylayoo-web:test`. Specs sit next to the code they cover. Three are worth knowing about:
