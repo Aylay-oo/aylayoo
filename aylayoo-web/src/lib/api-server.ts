@@ -16,7 +16,8 @@
 
 import {
   API_URL, ApiError,
-  type AimagWithPlaces, type Aimag, type Guide, type Pagination, type Place,
+  type AimagWithPlaces, type Aimag, type CityItinerary, type CityRouteItem, type Guide,
+  type Pagination, type Place,
 } from './api';
 
 /** The shape a service binding exposes: a fetch that takes a Request. */
@@ -96,3 +97,19 @@ export const getGuidesForAimag = (slug: string) =>
   read<{ data: Guide[]; pagination: Pagination }>(
     `/api/guides?limit=50&aimag=${encodeURIComponent(slug)}`,
   );
+
+/* The city section's server-side reads, for /ulaanbaatar's two detail pages and the sitemap.
+ *
+ * Here rather than in api.ts for the reason at the top of this file: these run inside the web
+ * Worker, which cannot fetch the service's workers.dev hostname, so they have to go through the
+ * API service binding. */
+export const getCityItinerary = (id: number) =>
+  one<CityItinerary>(`/api/city/itineraries/${id}`);
+
+export const getCityRoute = (id: number) => one<CityRouteItem>(`/api/city/routes/${id}`);
+
+export const getCityItineraries = async () =>
+  (await read<{ data: CityItinerary[] }>('/api/city/itineraries')).data;
+
+export const getCityRoutes = async () =>
+  (await read<{ data: CityRouteItem[] }>('/api/city/routes')).data;

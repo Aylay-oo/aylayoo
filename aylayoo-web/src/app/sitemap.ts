@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import type { Guide } from '../lib/api';
-import { getAimags, getGuides, getPlaces } from '../lib/api-server';
+import {
+  getAimags, getCityItineraries, getCityRoutes, getGuides, getPlaces,
+} from '../lib/api-server';
 import { SITE_URL } from '../lib/seo';
 
 /* /sitemap.xml
@@ -40,10 +42,13 @@ async function allGuides(): Promise<Guide[]> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [aimags, places, guides] = await Promise.all([
+  const [aimags, places, guides, itineraries, routes] = await Promise.all([
     safely(getAimags),
     safely(() => getPlaces()),
     safely(allGuides),
+    // Both return published rows only, so a draft is never listed for a crawler to find.
+    safely(getCityItineraries),
+    safely(getCityRoutes),
   ]);
 
   const lastModified = new Date();
@@ -67,6 +72,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       // A must-see place is the reason somebody comes to the country, let alone the site.
       priority: place.isMustSee ? 0.8 : 0.6,
+    })),
+
+    /* The city section, as high as an aimag: /ulaanbaatar is the page that leads to the
+     * itineraries and routes under it, the way an aimag leads to its places. */
+    { url: at('/ulaanbaatar'), lastModified, changeFrequency: 'weekly' as const, priority: 0.8 },
+
+    ...itineraries.map((itinerary) => ({
+      url: at(`/ulaanbaatar/itineraries/${itinerary.id}`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+
+    ...routes.map((route) => ({
+      url: at(`/ulaanbaatar/routes/${route.id}`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     })),
 
     /* Last, and lower: a guide's page changes when they edit their details, and the roster turns

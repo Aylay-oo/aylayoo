@@ -247,3 +247,128 @@ export function imageUrl(photoUrl: string | null | undefined): string | null {
   if (!photoUrl) return null;
   return photoUrl.startsWith('/') ? `${API_URL}${photoUrl}` : photoUrl;
 }
+
+/* ---------------------------------------------------------------------------
+ * Phase 2 — the Ulaanbaatar city section.
+ *
+ * Six resources the team edits in /admin. The API serves only published rows, so nothing here
+ * has to filter on status: a draft never arrives. The `status` field is still on the type
+ * because the admin client (lib/admin-api.ts) reads the same shapes and does see drafts.
+ * ------------------------------------------------------------------------- */
+
+export type CityStatus = 'draft' | 'published';
+export type TimeOfDay = 'morning' | 'midday' | 'afternoon' | 'evening';
+export type TipTopic = 'transport' | 'money' | 'weather' | 'etiquette';
+export type PhraseCategory =
+  'greetings' | 'basics' | 'food' | 'directions' | 'numbers' | 'emergency';
+/** 1, 2 or 3 — the only itinerary lengths the section offers. */
+export type ItineraryDays = 1 | 2 | 3;
+/** 1 = cheap, 3 = expensive. Null when nobody has filled it in; never guessed. */
+export type PriceLevel = 1 | 2 | 3;
+
+/* One stop on an itinerary or a walking route. The array's order is the route.
+ *
+ * `lat`/`lng` are both-or-neither and may be null — StopMap falls back to the ordered list for
+ * a stop without them rather than putting a marker where the stop is not. */
+export type CityStop = {
+  placeMn: string;
+  placeEn: string;
+  /** Set on an itinerary's stops; null on a walking route's, which is walked in one go. */
+  timeOfDay: TimeOfDay | null;
+  noteMn: string | null;
+  noteEn: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+/** What every city row has in common, so the admin editors can treat them alike. */
+type CityRow = {
+  id: number;
+  status: CityStatus;
+  sortOrder: number;
+};
+
+export type CityItinerary = CityRow & {
+  titleMn: string;
+  titleEn: string;
+  days: ItineraryDays;
+  summaryMn: string | null;
+  summaryEn: string | null;
+  stops: CityStop[];
+  /** ISO 8601, for the same reason as Guide.createdAt. */
+  createdAt: string;
+};
+
+export type CityRouteItem = CityRow & {
+  titleMn: string;
+  titleEn: string;
+  summaryMn: string | null;
+  summaryEn: string | null;
+  stops: CityStop[];
+  createdAt: string;
+};
+
+export type CityFood = CityRow & {
+  nameMn: string;
+  nameEn: string;
+  categoryMn: string | null;
+  categoryEn: string | null;
+  knownForMn: string | null;
+  knownForEn: string | null;
+  /** The district or street address. */
+  areaMn: string | null;
+  areaEn: string | null;
+  priceLevel: PriceLevel | null;
+  createdAt: string;
+};
+
+export type CityTip = CityRow & {
+  topic: TipTopic;
+  titleMn: string;
+  titleEn: string;
+  bodyMn: string;
+  bodyEn: string;
+  createdAt: string;
+};
+
+export type Phrase = CityRow & {
+  phraseMn: string;
+  /** How to say it, in Latin letters. */
+  pronunciation: string;
+  meaningEn: string;
+  category: PhraseCategory;
+};
+
+export type CityEvent = CityRow & {
+  titleMn: string;
+  titleEn: string;
+  /** YYYY-MM-DD. */
+  startDate: string;
+  /** Null for a single-day event. */
+  endDate: string | null;
+  placeMn: string | null;
+  placeEn: string | null;
+  descriptionMn: string | null;
+  descriptionEn: string | null;
+  link: string | null;
+  createdAt: string;
+};
+
+export const getCityItineraries = (days?: ItineraryDays) =>
+  list<CityItinerary>(`/api/city/itineraries${days ? `?days=${days}` : ''}`);
+
+export const getCityRoutes = () => list<CityRouteItem>('/api/city/routes');
+
+export const getCityFood = () => list<CityFood>('/api/city/food');
+
+export const getCityTips = () => list<CityTip>('/api/city/tips');
+
+export const getPhrases = () => list<Phrase>('/api/city/phrases');
+
+/** Published events that have not finished yet, soonest first — the API does the filtering. */
+export const getCityEvents = () => list<CityEvent>('/api/city/events');
+
+export const getCityItinerary = (id: number) =>
+  one<CityItinerary>(`/api/city/itineraries/${id}`);
+
+export const getCityRoute = (id: number) => one<CityRouteItem>(`/api/city/routes/${id}`);

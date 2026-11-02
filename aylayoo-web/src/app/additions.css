@@ -584,3 +584,178 @@
   .d-facts dt { margin-top: 8px; }
   .ms-link { margin-left: 0; display: block; margin-top: 10px; }
 }
+
+/* ===========================================================================
+   Phase 2 — the Ulaanbaatar city section (/ulaanbaatar and its detail pages)
+
+   In additions.css, not globals.css: that file is the design's own stylesheet ported
+   byte-for-byte, and its six palette passes are order-dependent. Everything here is UI the
+   mockup never had, and it leans on the palette variables rather than redeclaring them.
+   =========================================================================== */
+
+/* The tab bar reuses .filters, whose selected rule in globals.css keys off aria-pressed. These
+   are real tabs in a tablist, so they report aria-selected instead — and without this they
+   would have no active state at all. The same rule covers the admin tabs, which have had that
+   bug since they were written. */
+.filters button[aria-selected='true'],
+.admin-tabs button[aria-selected='true'] {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.city-page { padding-bottom: 10px; }
+
+.city-head { margin-bottom: 26px; }
+.city-head h1 { margin: 6px 0 10px; }
+
+.city-tabs { justify-content: flex-start; margin-bottom: 24px; }
+
+/* Two actions under the home page's city card, side by side and stacking on a phone. */
+.city-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+.city-daytabs { margin-bottom: 20px; }
+
+/* auto-fill rather than auto-fit: with one published itinerary, auto-fit stretches its card
+   the full width of the page, which reads as a banner rather than a card. */
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 580px) { .city-grid { grid-template-columns: 1fr; } }
+
+.city-card-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+.city-card-sm h3 { margin: 0; font-size: 17px; line-height: 1.3; }
+.city-card-sm h3 a { color: inherit; text-decoration: none; }
+.city-card-sm h3 a:hover, .city-card-sm h3 a:focus-visible { text-decoration: underline; }
+.city-card-sm p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.city-card-sm .tag { align-self: flex-start; }
+
+/* margin-top:auto pins the footer to the bottom however long the blurb above it runs, so a row
+   of cards keeps its actions on one line. */
+.city-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.city-count { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+/* ---- the projected route map ---- */
+.stop-map { margin: 0 0 4px; }
+.stop-map-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--soft);
+  border-radius: 14px;
+}
+.stop-map-line {
+  fill: none;
+  stroke: var(--green-l);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Dashed, to read as "a walk between these places" rather than as a surveyed path — the
+     projection knows the stops, not the streets between them. */
+  stroke-dasharray: 10 8;
+}
+.stop-map-dot { fill: var(--green); }
+.stop-map-num { fill: #fff; font-size: 15px; font-weight: 700; }
+.stop-map-cap { margin-top: 8px; color: var(--muted); font-size: 12.5px; }
+
+.d-card .stop-map { margin: 18px 0 10px; }
+
+/* ---- the ordered list of stops ---- */
+.stop-list { list-style: none; margin: 8px 0 22px; padding: 0; }
+.stop-item { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+.stop-item:first-child { border-top: 0; }
+
+.stop-num {
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--green-d);
+  font-weight: 700;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+}
+.stop-body { display: flex; flex-direction: column; gap: 4px; }
+.stop-body b { font-size: 15.5px; }
+.stop-when {
+  align-self: flex-start;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.stop-note { color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+/* ---- food, events: plain rows rather than cards, since there is no photo ---- */
+.city-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.city-row {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+}
+.city-row-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.city-row-top b { font-size: 16px; }
+.city-row p { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.city-row-meta { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+.city-row .f-linkbtn { margin-top: 10px; }
+.city-price { font-weight: 700; color: var(--green-d); }
+
+/* A two-line empty state: what is missing, then why. Used by the food and events tabs, which
+   are empty by design rather than by accident. */
+.city-empty { display: grid; gap: 6px; }
+.city-empty b { color: var(--ink); font-size: 15px; }
+
+/* ---- grouped sections: the practical guide, the phrasebook, events ---- */
+.city-guide, .city-phrases, .city-events { display: grid; gap: 28px; }
+.city-topic > h3 { margin: 0 0 12px; font-size: 18px; }
+.city-topic dl { margin: 0; display: grid; gap: 12px; }
+.city-tip {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+.city-tip dt { font-weight: 700; font-size: 15px; }
+.city-tip dd { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+/* ---- phrasebook ----
+   Three columns on a wide screen, one per line on a phone. The Mongolian stays first in both,
+   because it is the thing being looked up. */
+.phrase-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.phrase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 6px 16px;
+  align-items: baseline;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+@media (max-width: 620px) { .phrase { grid-template-columns: 1fr; } }
+.phrase b { font-size: 15.5px; }
+/* The Latin pronunciation, set apart from both the Cyrillic and the English so the three are
+   readable as three columns rather than one sentence. */
+.phrase-say { color: var(--green-d); font-size: 14px; font-style: italic; }
+.phrase-mean { color: var(--muted); font-size: 14px; }

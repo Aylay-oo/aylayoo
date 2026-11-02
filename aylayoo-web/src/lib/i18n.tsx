@@ -61,6 +61,11 @@ export function translate(s: string): string {
   if ((m = s.match(/^([\d.]+) мянган км²$/))) return `${m[1]} thousand km²`;
   if ((m = s.match(/^(\d+) жил$/))) return `${m[1]} years`;
   if ((m = s.match(/^(\d+) км зайд$/))) return `Within ${m[1]} km`;
+  // The city section's counts: "4 зогсоол", "2 өдөр", "3/4 зогсоол зураг дээр".
+  if ((m = s.match(/^(\d+) зогсоол$/))) return `${m[1]} ${m[1] === '1' ? 'stop' : 'stops'}`;
+  if ((m = s.match(/^(\d+) өдөр$/))) return `${m[1]} ${m[1] === '1' ? 'day' : 'days'}`;
+  if ((m = s.match(/^(\d+)\/(\d+) зогсоол зураг дээр$/)))
+    return `${m[1]} of ${m[2]} stops on the map`;
   if ((m = s.match(/^≈(\d+) км$/))) return `≈${m[1]} km`;
   if ((m = s.match(/^([\d.]+) · (\d+) үнэлгээ$/))) return `${m[1]} · ${m[2]} reviews`;
   if ((m = s.match(/^(\d+)–(\d+) сар$/))) return `${MONTHS[+m[1]]}–${MONTHS[+m[2]]}`;

@@ -167,4 +167,85 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Хуудас олдсонгүй': 'Page not found',
   'Хайсан хуудас байхгүй, эсвэл хаяг нь өөрчлөгдсөн байна.':
     'That page does not exist, or its address has changed.',
+
+  /* ---- Phase 2: the Ulaanbaatar city section ----
+   * The tab labels, the loading announcements and the empty states for /ulaanbaatar. The row
+   * content itself needs nothing here: every city table carries both languages, so it goes
+   * through pick() rather than t(). What is left is the furniture.
+   *
+   * The grouping headings (time of day, tip topic, phrase category, price level) live in
+   * lib/city-labels.ts and reach t() as variables, so i18n-coverage.spec.ts cannot see them —
+   * city-labels.spec.ts checks those instead. */
+  'Нийслэл хот': 'The capital',
+  'Хөтөлбөр, явган маршрут, хоолны газар, хэрэгтэй мэдээлэл, хэллэг, арга хэмжээ — нэг хуудсанд.':
+    'Itineraries, walking routes, places to eat, practical advice, a phrasebook and what is on — on one page.',
+  'Хэсэг': 'Section',
+  'Улаанбаатарын хөтөлбөр, маршрут, хэллэг': 'Ulaanbaatar itineraries, routes and phrases',
+
+  /* tabs */
+  'Аяллын хөтөлбөр': 'Itineraries',
+  'Явган маршрут': 'Walking route',
+  'Хоол, ресторан': 'Food & restaurants',
+  'Хэрэгтэй мэдээлэл': 'Practical guide',
+  'Хэллэг': 'Phrasebook',
+  'Арга хэмжээ': 'What is on',
+
+  /* itineraries */
+  'Хоногийн тоо': 'Number of days',
+  'Хөтөлбөрүүд ачаалагдлаа': 'Itineraries loaded',
+  'Одоохондоо хөтөлбөр нийтлээгүй байна.': 'No itineraries have been published yet.',
+  'Бусад хөтөлбөр харах': 'See the other itineraries',
+
+  /* walking routes */
+  'Маршрутууд ачаалагдлаа': 'Routes loaded',
+  'Одоохондоо явган маршрут нийтлээгүй байна.': 'No walking routes have been published yet.',
+  'Бусад маршрут харах': 'See the other routes',
+
+  /* stops, and the projected route map */
+  'Зогсоолуудын байршил': 'Where the stops are',
+  'Зогсоол бүртгэгдээгүй байна.': 'No stops have been added yet.',
+
+  /* food — empty until the team adds rows, so this copy is read more than most */
+  'Хоолны газрууд ачаалагдлаа': 'Places to eat loaded',
+  'Хоолны газруудыг бэлтгэж байна.': 'We are still putting the food guide together.',
+  'Манай баг шалгаж, тодорхой мэдээлэлтэйгээр нэмэх хүртэл энэ хэсэг хоосон байна.':
+    'This section stays empty until our team has checked each place and can add it with real detail.',
+  'Хямд': 'Inexpensive',
+  'Дундаж': 'Mid-range',
+  'Үнэтэй': 'Expensive',
+
+  /* practical guide */
+  'Хэрэгтэй мэдээлэл ачаалагдлаа': 'Practical guide loaded',
+  'Одоохондоо хэрэгтэй мэдээлэл нийтлээгүй байна.': 'No practical advice has been published yet.',
+  'Бусад': 'Other',
+  'Хотоор зорчих': 'Getting around',
+  'Сим карт ба төлбөр': 'SIM cards & paying',
+  'Цаг агаар ба хувцас': 'Weather & what to wear',
+  'Зан заншил': 'Etiquette',
+
+  /* phrasebook */
+  'Хэллэгүүд ачаалагдлаа': 'Phrases loaded',
+  'Одоохондоо хэллэг нийтлээгүй байна.': 'No phrases have been published yet.',
+  'Уншлага': 'Pronunciation',
+  'Мэндчилгээ': 'Greetings',
+  'Хэрэгтэй үгс': 'Essentials',
+  'Хоол, ундаа': 'Food & drink',
+  'Зам чиглэл': 'Directions',
+  'Тоо, үнэ': 'Numbers & prices',
+  'Онцгой тохиолдол': 'Emergencies',
+
+  /* times of day, on an itinerary's stops */
+  'Өглөө': 'Morning',
+  'Өдөр': 'Midday',
+  'Үдээс хойш': 'Afternoon',
+  'Орой': 'Evening',
+
+  /* events — also empty until the team adds rows */
+  'Арга хэмжээнүүд ачаалагдлаа': 'Events loaded',
+  'Энэ долоо хоногт': 'On this week',
+  'Дараагийн арга хэмжээнүүд': 'Coming up',
+  'Энэ долоо хоногт нийтэлсэн арга хэмжээ байхгүй.': 'There are no published events this week.',
+  'Манай баг баталгаажсан арга хэмжээг тогтмол нэмж байна.':
+    'Our team adds events here once they are confirmed.',
+  'Дэлгэрэнгүй мэдээлэл': 'More information',
 };

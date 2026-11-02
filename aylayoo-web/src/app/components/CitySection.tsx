@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useDialogs } from '../../lib/dialogs';
 import { useLang } from '../../lib/i18n';
@@ -36,13 +37,21 @@ export function CitySection() {
           ))}
         </div>
 
-        <button
-          className="btn btn-primary"
-          type="button"
-          onClick={() => openContact({ kind: 'contact', subject: 'Улаанбаатар хотын хөтөч' })}
-        >
-          {t('Хотын хөтөч нартай холбогдох')}
-        </button>
+        {/* The tiles above are editorial suggestions that have never changed; everything the
+            team actually publishes about the city lives on /ulaanbaatar, so this is the way
+            through to it. First, and primary, because it is the more useful of the two. */}
+        <div className="city-actions">
+          <Link className="btn btn-primary" href="/ulaanbaatar">
+            {t('Улаанбаатарын хөтөлбөр, маршрут, хэллэг')}
+          </Link>
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => openContact({ kind: 'contact', subject: 'Улаанбаатар хотын хөтөч' })}
+          >
+            {t('Хотын хөтөч нартай холбогдох')}
+          </button>
+        </div>
       </div>
 
       <div className="radius">

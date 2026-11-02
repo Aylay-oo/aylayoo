@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useDialogs } from '../../lib/dialogs';
 import { useLang, type Lang } from '../../lib/i18n';
@@ -11,6 +12,10 @@ type NavLink = {
   href: string;
   /** Switches the travel mode as well as jumping, as the design's [data-mode] links did. */
   mode?: TravelMode;
+  /* A real page rather than a jump on this one. Every other entry here is a bare hash, which
+   * is why this needs saying: a hash link is an <a> so the browser does the smooth scroll
+   * itself, while a route has to be a next/link or it reloads the whole app to move one page. */
+  route?: boolean;
 };
 
 const NAV_LINKS: readonly NavLink[] = [
@@ -18,6 +23,7 @@ const NAV_LINKS: readonly NavLink[] = [
   { label: 'Хаана', href: '#where', mode: 'country' },
   { label: 'Guide / Hutch', href: '#guides' },
   { label: 'Хотод юу хийх вэ', href: '#where', mode: 'city' },
+  { label: 'Улаанбаатар', href: '/ulaanbaatar', route: true },
   { label: 'Монголын тухай', href: '#mustsee' },
   { label: 'Холбогдох', href: '#contact' },
 ];
@@ -67,16 +73,21 @@ export function Header() {
           id="nav"
           aria-label={t('Үндсэн цэс')}
         >
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={current === link.href ? 'on' : undefined}
-              onClick={() => onNavClick(link)}
-            >
-              {t(link.label)}
-            </a>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const props = {
+              className: current === link.href ? 'on' : undefined,
+              onClick: () => onNavClick(link),
+            };
+            return link.route ? (
+              <Link key={link.label} href={link.href} {...props}>
+                {t(link.label)}
+              </Link>
+            ) : (
+              <a key={link.label} href={link.href} {...props}>
+                {t(link.label)}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="h-tools">

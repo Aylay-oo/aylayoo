@@ -66,3 +66,18 @@ export function PlaceRowSkeletons({ count = 3 }: { count?: number }) {
     </ul>
   );
 }
+
+/** Placeholder cards for the city section's lists, sized like the real ones. */
+export function CityCardSkeletons({ count = 3 }: { count?: number }) {
+  return (
+    <div className="city-grid" aria-hidden="true">
+      {Array.from({ length: count }, (_, i) => (
+        <div className="sk-card" key={i}>
+          <div className="sk sk-line" />
+          <div className="sk sk-line mid" />
+          <div className="sk sk-line short" />
+        </div>
+      ))}
+    </div>
+  );
+}

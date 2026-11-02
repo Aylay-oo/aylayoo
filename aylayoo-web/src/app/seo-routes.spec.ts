@@ -1,6 +1,10 @@
-import type { Aimag, Guide, Pagination, Place } from '../lib/api';
+import type {
+  Aimag, CityItinerary, CityRouteItem, Guide, Pagination, Place,
+} from '../lib/api';
 import { ApiError } from '../lib/api';
-import { getAimags, getGuides, getPlaces } from '../lib/api-server';
+import {
+  getAimags, getCityItineraries, getCityRoutes, getGuides, getPlaces,
+} from '../lib/api-server';
 import robots from './robots';
 import sitemap from './sitemap';
 
@@ -10,12 +14,21 @@ import sitemap from './sitemap';
 
 jest.mock('../lib/api-server', () => {
   const actual = jest.requireActual('../lib/api-server');
-  return { ...actual, getAimags: jest.fn(), getPlaces: jest.fn(), getGuides: jest.fn() };
+  return {
+    ...actual,
+    getAimags: jest.fn(),
+    getPlaces: jest.fn(),
+    getGuides: jest.fn(),
+    getCityItineraries: jest.fn(),
+    getCityRoutes: jest.fn(),
+  };
 });
 
 const mockAimags = jest.mocked(getAimags);
 const mockPlaces = jest.mocked(getPlaces);
 const mockGuides = jest.mocked(getGuides);
+const mockItineraries = jest.mocked(getCityItineraries);
+const mockRoutes = jest.mocked(getCityRoutes);
 
 const aimag = (slug: string): Aimag => ({
   id: 1, slug, nameMn: 'Аймаг', nameEn: 'Aimag', region: 'khangai',
@@ -37,6 +50,16 @@ const guide = (id: number): Guide => ({
   rating: null, reviewCount: null, aimags: [],
 });
 
+const itinerary = (id: number): CityItinerary => ({
+  id, titleMn: 'Хөтөлбөр', titleEn: 'Itinerary', days: 1, summaryMn: null, summaryEn: null,
+  stops: [], status: 'published', sortOrder: 0, createdAt: '',
+});
+
+const cityRoute = (id: number): CityRouteItem => ({
+  id, titleMn: 'Маршрут', titleEn: 'Route', summaryMn: null, summaryEn: null,
+  stops: [], status: 'published', sortOrder: 0, createdAt: '',
+});
+
 const page = (data: Guide[], totalPages: number): { data: Guide[]; pagination: Pagination } => ({
   data,
   pagination: { page: 1, limit: 50, total: totalPages * 50, totalPages },
@@ -46,6 +69,8 @@ beforeEach(() => {
   mockAimags.mockResolvedValue([aimag('khuvsgul')]);
   mockPlaces.mockResolvedValue([place(1)]);
   mockGuides.mockResolvedValue(page([guide(1)], 1));
+  mockItineraries.mockResolvedValue([itinerary(7)]);
+  mockRoutes.mockResolvedValue([cityRoute(9)]);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -61,15 +86,42 @@ describe('robots', () => {
 });
 
 describe('sitemap', () => {
-  it('lists the home page, every aimag, every place and every guide', async () => {
+  it('lists the home page, every aimag, place, city page and guide', async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls).toEqual([
       'https://aylayoo.com/',
       'https://aylayoo.com/aimags/khuvsgul',
       'https://aylayoo.com/places/1',
+      'https://aylayoo.com/ulaanbaatar',
+      'https://aylayoo.com/ulaanbaatar/itineraries/7',
+      'https://aylayoo.com/ulaanbaatar/routes/9',
       'https://aylayoo.com/guides/1',
     ]);
+  });
+
+  it('ranks the city section as highly as an aimag', async () => {
+    // /ulaanbaatar is the page that leads to the itineraries and routes under it, the way an
+    // aimag leads to its places.
+    const entries = await sitemap();
+    const priority = (url: string) => entries.find((e) => e.url.endsWith(url))?.priority;
+
+    expect(priority('/ulaanbaatar')).toBe(priority('/aimags/khuvsgul'));
+    expect(priority('/ulaanbaatar/itineraries/7')).toBeLessThan(
+      priority('/ulaanbaatar') as number,
+    );
+  });
+
+  it('still lists /ulaanbaatar when the city queries fail', async () => {
+    // The section's landing page is worth serving even with nothing published under it.
+    const down = () => Promise.reject(new ApiError('Сервертэй холбогдож чадсангүй'));
+    mockItineraries.mockImplementation(down);
+    mockRoutes.mockImplementation(down);
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls).toContain('https://aylayoo.com/ulaanbaatar');
+    expect(urls.some((url) => url.includes('/itineraries/'))).toBe(false);
+    expect(urls.some((url) => url.includes('/ulaanbaatar/routes/'))).toBe(false);
   });
 
   it('uses absolute URLs, which a sitemap requires', async () => {
@@ -122,7 +174,13 @@ describe('sitemap', () => {
     mockAimags.mockImplementation(down);
     mockPlaces.mockImplementation(down);
     mockGuides.mockImplementation(down);
+    mockItineraries.mockImplementation(down);
+    mockRoutes.mockImplementation(down);
 
-    expect((await sitemap()).map((e) => e.url)).toEqual(['https://aylayoo.com/']);
+    expect((await sitemap()).map((e) => e.url)).toEqual([
+      'https://aylayoo.com/',
+      // Static, so it survives every query failing — unlike everything else here.
+      'https://aylayoo.com/ulaanbaatar',
+    ]);
   });
 });
