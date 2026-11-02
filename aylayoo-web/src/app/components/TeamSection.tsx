@@ -8,8 +8,19 @@ import { Notice } from './SectionState';
 import { TeamAvatar, traitsFor } from './TeamAvatar';
 
 /* The people who built it. Names, roles, schools and descriptions come from GET /api/team in
- * both languages; only the portraits are local, since they are drawings keyed by name.
+ * both languages; only the portraits are local, since they are artwork keyed by name.
  */
+
+/* The portraits the team made of themselves, keyed by name exactly as /api/team spells it.
+ * They sit in public/ rather than the database for the same reason the drawings they replace
+ * did: they are artwork chosen per person, not a record anyone administers. Anyone without
+ * one — a fifth member added through the admin API — still falls back to the drawing. */
+const TEAM_PHOTOS: Record<string, string> = {
+  'М. Болормаа': '/images/team/bolormaa.png',
+  'Э. Оюундарь': '/images/team/oyundari.png',
+  'С. Болорсайхан': '/images/team/bolorsaikhan.png',
+  'Б. Хулан': '/images/team/khulan.jpg',
+};
 
 export function TeamSection({ team }: { team: Resource<TeamMember[]> }) {
   const { t, pick } = useLang();
@@ -44,14 +55,14 @@ export function TeamSection({ team }: { team: Resource<TeamMember[]> }) {
           <div className="team-grid" id="teamGrid">
             {members.map((member) => {
               const traits = traitsFor(member.name);
-              const photo = imageUrl(member.photoUrl);
+              const photo = imageUrl(member.photoUrl) ?? TEAM_PHOTOS[member.name] ?? null;
               const name = pick(member.name, member.nameEn);
 
               return (
                 <article className="t-card" key={member.id}>
                   <div className="t-img">
-                    {/* A real photo wins if one is ever uploaded through the admin API;
-                        otherwise the design's illustration. */}
+                    {/* A photo uploaded through the admin API wins, then the team's own
+                        portrait, then the design's illustration. */}
                     {photo ? (
                       <Image
                         src={photo}

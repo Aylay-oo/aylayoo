@@ -1,7 +1,7 @@
 //@ts-check
 
-const { existsSync } = require('fs');
-const { dirname, join } = require('path');
+const { existsSync, realpathSync } = require('fs');
+const { dirname, join, sep } = require('path');
 
 /**
  * The directory that owns the `node_modules` holding Next.
@@ -15,12 +15,32 @@ const { dirname, join } = require('path');
 function workspaceRoot() {
   let dir = __dirname;
   for (let i = 0; i < 6; i += 1) {
-    if (existsSync(join(dir, 'node_modules', 'next'))) return dir;
+    if (holdsNext(dir)) return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
   return __dirname;
+}
+
+/**
+ * Whether `dir` holds the Next package itself, not just a link pointing out of it.
+ *
+ * `bun install` run inside this app links node_modules/next to the store at the monorepo
+ * root, so the link exists here while the files it names sit three levels up. Taking this
+ * directory as the root then made Turbopack refuse to start: it will not compile files
+ * outside the root, and `next` itself is outside. Following the link to its real path keeps
+ * the walk going up to the directory that actually owns the package — and still stops here
+ * in the Aylay-oo team's repo, where this app is checked out on its own and node_modules is
+ * a real directory.
+ *
+ * @param {string} dir
+ * @returns {boolean}
+ */
+function holdsNext(dir) {
+  const link = join(dir, 'node_modules', 'next');
+  if (!existsSync(link)) return false;
+  return realpathSync(link).startsWith(dir + sep);
 }
 
 const root = workspaceRoot();

@@ -5,8 +5,8 @@ import type { Resource } from '../../lib/use-resource';
 import { TeamSection } from './TeamSection';
 
 /* The team comes from the API in both languages; only the portraits are local, keyed by name.
- * The case worth pinning is a member the portrait table has never heard of — someone added
- * later through the admin API must still get a drawing rather than an empty box. */
+ * The case worth pinning is a member no portrait is keyed to — someone added later through
+ * the admin API must still get a drawing rather than an empty box. */
 
 const member = (over: Partial<TeamMember> & Pick<TeamMember, 'id' | 'name'>): TeamMember => ({
   role: 'Хөгжүүлэгч', photoUrl: null, sortOrder: 1,
@@ -25,7 +25,7 @@ const KHULAN = member({
   role: 'Маркетингийн менежер', roleEn: 'Marketing manager',
   schoolMn: 'Күнз сургууль', schoolEn: 'Confucius School',
 });
-/** Nobody the portrait table knows. */
+/** Nobody either portrait table knows. */
 const NEWCOMER = member({ id: 9, name: 'Шинэ Хүн', nameEn: 'New Person', schoolMn: null, schoolEn: null });
 
 function resource(
@@ -61,9 +61,13 @@ describe('the team', () => {
     expect(screen.getAllByText('Тайлбар').length).toBe(2);
   });
 
-  it('draws a portrait for each of them', () => {
+  it('gives each of them their own portrait', () => {
     setup(resource([BOLORMAA, KHULAN]));
-    expect(document.querySelectorAll('.t-img svg')).toHaveLength(2);
+    const photos = [...document.querySelectorAll('.t-img img')] as HTMLImageElement[];
+    expect(photos).toHaveLength(2);
+    expect(photos[0].getAttribute('src')).toContain('/images/team/bolormaa.png');
+    expect(photos[1].getAttribute('src')).toContain('/images/team/khulan.jpg');
+    expect(document.querySelector('.t-img svg')).toBeNull();
   });
 
   it('tints the marketing role differently, as the design did', () => {
@@ -73,19 +77,19 @@ describe('the team', () => {
     expect(roles[1].classList.contains('mk')).toBe(true);
   });
 
-  it('still draws someone the portrait table has never heard of', () => {
+  it('still draws someone no portrait is keyed to', () => {
     setup(resource([NEWCOMER]));
     expect(document.querySelectorAll('.t-img svg')).toHaveLength(1);
     // And with no school recorded, the design's fallback badge.
     expect(screen.getByText('Маркетинг')).toBeTruthy();
   });
 
-  it('shows a photo instead when one has been uploaded', () => {
-    setup(resource([member({ id: 2, name: 'Зурагтай', photoUrl: '/api/images/team/a.jpg' })]));
+  it('prefers a photo uploaded through the admin API to the local portrait', () => {
+    setup(resource([member({ ...BOLORMAA, photoUrl: '/api/images/team/a.jpg' })]));
     const img = document.querySelector('.t-img img') as HTMLImageElement;
     expect(img).toBeTruthy();
     expect(img.getAttribute('src')).toContain('/api/images/team/a.jpg');
-    expect(document.querySelector('.t-img svg')).toBeNull();
+    expect(img.getAttribute('src')).not.toContain('bolormaa.png');
   });
 
   it('switches to English, including the school and the role', () => {
