@@ -12,7 +12,7 @@ import { GuidesSection } from './GuidesSection';
 
 const guide = (id: number, name: string, type: GuideType = 'individual'): Guide => ({
   id, name, type, bioMn: null, bioEn: null, languages: ['mn', 'en'],
-  tripTypes: ['countryside'], phone: '+976 99110000', email: `g${id}@example.com`,
+  tripTypes: ['countryside'],
   photoUrl: null, website: null, createdAt: '2026-09-26T18:16:43.000Z',
   fullName: null, experienceYears: 5, experienceRange: null,
   routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: type === 'driver' ? 'Delica' : null,

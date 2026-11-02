@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { and, count, desc, eq, getTableColumns, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { getDb, type Db } from '../db/client';
 import { aimags, guideAimags, GUIDE_TYPES, guides, type GuideType } from '../db/schema';
 import { getFile, uploadImage } from '../lib/http';
@@ -9,8 +9,43 @@ import type { AppEnv } from '../types';
 
 export const guideRoutes = new Hono<AppEnv>();
 
-// Everything except "status" is safe to show publicly.
-const { status: _status, ...publicColumns } = getTableColumns(guides);
+/* What a guide looks like to the public.
+ *
+ * An explicit allow-list, not `getTableColumns(guides)` minus a few. It used to be the latter,
+ * with the comment "everything except status is safe to show publicly" — and that was wrong:
+ * `phone` and `email` went out with every guide on /api/guides, including the tourism
+ * association's fifty real people. A subtractive list is the wrong shape for this, because the
+ * failure mode is silent and backwards: adding a column to the table publishes it, and nobody
+ * reviewing that migration is looking at this file.
+ *
+ * So: a new column is private until somebody adds it here on purpose.
+ *
+ * Deliberately absent:
+ *   status  — pending and rejected guides have no public page at all; the route filters on it.
+ *   phone   — how the admin reaches a guide, not how a traveller does.
+ *   email     A traveller contacts a guide through POST /api/contact, which takes the guide's
+ *             id and never exposes either. Both are still readable on /api/admin/guides.
+ */
+const publicColumns = {
+  id: guides.id,
+  type: guides.type,
+  name: guides.name,
+  fullName: guides.fullName,
+  bioMn: guides.bioMn,
+  bioEn: guides.bioEn,
+  languages: guides.languages,
+  tripTypes: guides.tripTypes,
+  photoUrl: guides.photoUrl,
+  website: guides.website,
+  createdAt: guides.createdAt,
+  experienceYears: guides.experienceYears,
+  experienceRange: guides.experienceRange,
+  routeMn: guides.routeMn,
+  routeEn: guides.routeEn,
+  car: guides.car,
+  rating: guides.rating,
+  reviewCount: guides.reviewCount,
+} as const;
 
 // Adds the list of aimags each guide works in.
 export async function attachAimags<T extends { id: number }>(db: Db, rows: T[]) {

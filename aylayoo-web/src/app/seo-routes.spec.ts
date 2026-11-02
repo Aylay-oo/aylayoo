@@ -44,8 +44,7 @@ const place = (id: number, isMustSee = false): Place => ({
 });
 
 const guide = (id: number): Guide => ({
-  id, type: 'individual', name: 'Хөтөч', bioMn: null, bioEn: null, languages: [], tripTypes: [],
-  phone: '', email: '', photoUrl: null, website: null, createdAt: '', fullName: null,
+  id, type: 'individual', name: 'Хөтөч', bioMn: null, bioEn: null, languages: [], tripTypes: [], photoUrl: null, website: null, createdAt: '', fullName: null,
   experienceYears: null, experienceRange: null, routeMn: null, routeEn: null, car: null,
   rating: null, reviewCount: null, aimags: [],
 });

@@ -70,8 +70,11 @@ export type Guide = {
   bioEn: string | null;
   languages: string[];
   tripTypes: ('city' | 'countryside')[];
-  phone: string;
-  email: string;
+  /* No `phone` or `email`. They are columns on the guides table, but the public API does not
+   * send them — see publicColumns in aylayoo-service/src/routes/guides.ts. They used to be
+   * here, and the type claiming them is how a public page could have started rendering a
+   * guide's contact details without anyone noticing. AdminGuide adds them back for the admin
+   * screens, which read /api/admin/guides and are the only place they belong. */
   photoUrl: string | null;
   website: string | null;
   /* An ISO 8601 string, not a number. The column is a unix timestamp, but drizzle's

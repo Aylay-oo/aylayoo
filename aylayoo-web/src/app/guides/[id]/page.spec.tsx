@@ -24,8 +24,6 @@ function guide(over: Partial<Guide> = {}): Guide {
     bioEn: null,
     languages: ['en', 'ko'],
     tripTypes: ['countryside'],
-    phone: '+976 9900 0001',
-    email: 'demo@example.com',
     photoUrl: null,
     website: null,
     createdAt: '2026-01-01T00:00:00.000Z',

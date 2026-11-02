@@ -10,8 +10,15 @@ import { API_URL, ApiError, type CityStatus, type Guide, type GuideType } from '
 /** An 8-hour token from POST /api/admin/login. */
 export type AdminToken = string;
 
-/** A pending registration carries its status, which the public list strips out. */
-export type AdminGuide = Guide & { status: 'pending' | 'approved' | 'rejected' };
+/* What the admin API returns for a guide: the public shape, plus the three fields only an
+ * admin may see. `status` drives the review queue; `phone` and `email` are how the team reaches
+ * a guide, and are deliberately absent from the public `Guide` type and from every public
+ * endpoint. */
+export type AdminGuide = Guide & {
+  status: 'pending' | 'approved' | 'rejected';
+  phone: string;
+  email: string;
+};
 
 export type ContactMessage = {
   id: number;

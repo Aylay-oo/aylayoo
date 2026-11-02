@@ -47,8 +47,7 @@ const PLACES: Place[] = [{
 
 const GUIDES: Guide[] = [{
   id: 1, type: 'individual', name: 'Б. Болормаа', bioMn: null, bioEn: null,
-  languages: ['mn', 'en'], tripTypes: ['countryside'], phone: '+976 99110001',
-  email: 'b@example.com', photoUrl: null, website: null,
+  languages: ['mn', 'en'], tripTypes: ['countryside'], photoUrl: null, website: null,
   createdAt: '2026-09-26T18:16:43.000Z', fullName: null,
   experienceYears: 6, experienceRange: null,
   routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null, rating: 5, reviewCount: 42,
