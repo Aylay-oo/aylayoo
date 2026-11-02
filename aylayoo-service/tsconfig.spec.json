@@ -1,0 +1,14 @@
+{
+  "// why": "The tests only. They import the Worker source, so they need its Workers types too, plus node: for reading the migrations and the bun: declarations in src/test/bun.d.ts.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": []
+}

@@ -6,32 +6,60 @@
   "targets": {
     "serve": {
       "executor": "nx:run-commands",
-      "options": { "command": "wrangler dev", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "wrangler dev",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
     "deploy": {
       "executor": "nx:run-commands",
-      "options": { "command": "wrangler deploy", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "wrangler deploy",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
     "drizzle:generate": {
       "executor": "nx:run-commands",
-      "options": { "command": "drizzle-kit generate", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "drizzle-kit generate",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
     "wrangler:migrate-local": {
       "executor": "nx:run-commands",
-      "options": { "command": "wrangler d1 migrations apply aylayoo-db --local", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "wrangler d1 migrations apply aylayoo-db --local",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
     "wrangler:migrate-remote": {
       "executor": "nx:run-commands",
-      "options": { "command": "wrangler d1 migrations apply aylayoo-db --remote", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "wrangler d1 migrations apply aylayoo-db --remote",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
     "seed-local": {
       "executor": "nx:run-commands",
-      "options": { "command": "wrangler d1 execute aylayoo-db --local --file=seed/seed.sql", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "wrangler d1 execute aylayoo-db --local --file=seed/seed.sql",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     },
-    "// no seed-remote target": "seed/seed.sql starts by DELETEing every row, so it must never touch production. Data changes there go through a reviewed seed/prod-*.sql, run by hand after a backup — see the README.",
+    "// no seed-remote target": "seed/seed.sql starts by DELETEing every row, so it must never touch production. Data changes there go through a reviewed seed/prod-*.sql, run by hand after a backup \u2014 see the README.",
     "typecheck": {
       "executor": "nx:run-commands",
-      "options": { "command": "tsc --noEmit -p tsconfig.json", "cwd": "apps/aylayoo/aylayoo-service" }
+      "options": {
+        "command": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.spec.json",
+        "cwd": "apps/aylayoo/aylayoo-service"
+      }
     }
   }
 }

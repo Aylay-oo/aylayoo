@@ -205,6 +205,44 @@ curl -X POST http://localhost:4003/api/admin/login \
   -d '{"email":"ayalyoo123@gmail.com","password":"choose-a-strong-password"}'
 ```
 
+## Tests
+
+```bash
+bun test                               # or: bunx nx run aylayoo-service:test
+bunx nx run aylayoo-service:typecheck  # checks the worker source AND the tests
+```
+
+`src/routes/city.spec.ts` covers four rules that are invisible when they break, so none of
+them would show up as an error in production:
+
+| | |
+|---|---|
+| A partial `PUT` changes only what it sends | Two real bugs, found by hand before the API was committed: the update schemas carried Zod defaults, and `.partial()` leaves a default in place, so `{"status":"published"}` emptied a row's stops and renaming a published row quietly unpublished it. Both reported success. |
+| An empty `{}` PUT is a 400 | It parses cleanly — every field is optional — and would otherwise reach drizzle as an `UPDATE` with nothing to `SET`. |
+| A draft is not public, by list **or** by id | Guessing an id must not be a way around the status filter. The draft and a row that does not exist return identical 404s, so the response cannot be used to tell them apart. |
+| Nothing under `/api/admin` answers without a token | Proves the admin city router is mounted *after* `use('*', requireAdmin)`. Mounted before it, every route would be wide open and still answer 200. |
+
+Each of the four was checked by reintroducing the bug and confirming the suite goes red:
+restoring the Zod defaults fails 6 tests, dropping the empty-PUT guard fails 2, removing the
+status filter from a `:id` handler fails 3, and moving the router above the auth middleware
+fails 4.
+
+### How it runs without a Worker
+
+`src/test/d1.ts` is a `D1Database` backed by an in-memory `bun:sqlite`, built by applying the
+committed migrations in `drizzle/` — so a column added to `schema.ts` without a migration fails
+the tests too. It is a test double, not a D1 emulator: `batch` is a transaction rather than
+D1's exact semantics, and there are no size limits or network.
+
+Miniflare would be more faithful, but it is only here as a transitive dependency of wrangler;
+making it a real one means editing the monorepo's root `package.json`. `bun:sqlite` is built
+into the runtime and costs nothing. For the same reason `src/test/bun.d.ts` declares the slice
+of `bun:test` and `bun:sqlite` the tests use, instead of pulling in `bun-types`.
+
+Two tsconfigs, because the tests need `node:` and `bun:` types the Worker deliberately does not
+carry: `tsconfig.json` checks `src/` minus the tests, `tsconfig.spec.json` checks everything.
+The `typecheck` target runs both.
+
 ## Step 9 — Deploy to Cloudflare
 
 ```bash
