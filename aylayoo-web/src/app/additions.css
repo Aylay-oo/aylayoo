@@ -759,3 +759,40 @@
    readable as three columns rather than one sentence. */
 .phrase-say { color: var(--green-d); font-size: 14px; font-style: italic; }
 .phrase-mean { color: var(--muted); font-size: 14px; }
+
+/* ---- /admin → "Хот" ----------------------------------------------------- */
+
+.admin-subtabs { margin: 0 0 20px; }
+
+.admin-city-card { display: grid; gap: 10px; }
+.admin-city-top { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-city-top b { font-size: 16px; }
+
+/* A draft reads as "not live yet" rather than as a second status badge, which is why it reuses
+   .admin-unset — the same muted treatment an unassigned guide field gets. */
+.admin-danger { color: var(--red, #B3261E); }
+
+.admin-city-form { display: grid; gap: 14px; margin-top: 4px; }
+.admin-city-form .fld-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.admin-city-form .fld-row > .fld { flex: 1 1 180px; min-width: 0; }
+
+/* ---- the stops sub-editor ---- */
+.admin-stops { display: grid; gap: 12px; }
+.admin-stop {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+}
+.admin-stop > legend {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--green-d);
+  font-weight: 700;
+  font-size: 13px;
+}
+.admin-stop-actions { display: flex; flex-wrap: wrap; gap: 8px; }

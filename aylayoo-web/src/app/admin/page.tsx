@@ -7,6 +7,7 @@ import { useResource } from '../../lib/use-resource';
 import { LogoMark } from '../components/icons';
 import { AdminLogin } from './AdminLogin';
 import { ApprovedGuides } from './ApprovedGuides';
+import { CityTab } from './city/CityTab';
 import { Messages } from './Messages';
 import { PendingGuides } from './PendingGuides';
 
@@ -20,11 +21,12 @@ import { PendingGuides } from './PendingGuides';
  * so a language switch would be furniture nobody needs.
  */
 
-type Tab = 'pending' | 'approved' | 'messages';
+type Tab = 'pending' | 'approved' | 'city' | 'messages';
 
 const TABS: readonly { key: Tab; label: string }[] = [
   { key: 'pending', label: 'Хүлээгдэж байгаа бүртгэл' },
   { key: 'approved', label: 'Баталгаажсан хөтчүүд' },
+  { key: 'city', label: 'Хот' },
   { key: 'messages', label: 'Мессежүүд' },
 ];
 
@@ -93,6 +95,14 @@ export default function AdminPage() {
               aimags={aimags.data ?? []}
               onUnauthorized={signOut}
             />
+          </section>
+        )}
+
+        {tab === 'city' && (
+          <section id="tab-city" role="tabpanel" aria-label="Хот">
+            {/* Everything the Ulaanbaatar section shows: itineraries, walking routes, places
+                to eat, the practical guide, the phrasebook and what is on. */}
+            <CityTab token={token} onUnauthorized={signOut} />
           </section>
         )}
 
