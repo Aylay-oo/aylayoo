@@ -121,6 +121,15 @@ bunx nx run aylayoo-web:deploy
 > fetch, not a code or dependency problem: **retry once and it passes**, with nothing changed.
 > Seen twice on 2026-11-02. Do not go looking for a config fix.
 
+> **A production build now refuses a bad URL.** `next.config.js` calls `assertApiUrl()` from
+> `scripts/api-url-guard.cjs`, which fails the build when `NODE_ENV=production` and
+> `NEXT_PUBLIC_API_URL` is missing, unparseable, or points at `localhost`, `127.0.0.1`,
+> `0.0.0.0`, `[::1]` or `host.docker.internal`. `next dev` is untouched. The `preview` targets
+> set `ALLOW_LOCAL_API_URL=true` to opt out, because pointing a preview at a local API is what
+> it is for — the deploy paths deliberately do not.
+>
+> It is a backstop, not the fix: the two pins above are. `src/lib/api-url-guard.spec.ts` covers it.
+
 > **Check the artefact, not the command.** Before any deploy:
 > ```bash
 > grep -rl "localhost:4003" .next/static .open-next/assets   # must print nothing

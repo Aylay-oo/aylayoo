@@ -12,7 +12,7 @@
     "extract-photos": "node scripts/extract-photos.mjs",
     "// deploy": "NEXT_PUBLIC_API_URL is inlined by `next build`, so it must be set for these two, not as a Worker var.",
     "// cf:deploy pins the URL": "It used to read ${NEXT_PUBLIC_API_URL:-https://…}, and that shipped a production bundle pointing at http://localhost:4003 on 2026-11-02. Bun loads .env files into the environment before running a script, so a developer's own .env.local set the variable and the `:-` default never fired. A production deploy must not depend on which .env files happen to be on the machine. cf:preview keeps the overridable form on purpose — pointing it at a local API is the point of previewing.",
-    "cf:preview": "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare preview",
+    "cf:preview": "ALLOW_LOCAL_API_URL=true NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare preview",
     "cf:deploy": "NEXT_PUBLIC_API_URL=https://aylayoo-service.sbolorsaikhan4.workers.dev next build && opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy"
   },
   "dependencies": {

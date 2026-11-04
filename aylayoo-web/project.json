@@ -5,7 +5,7 @@
   "projectType": "application",
   "tags": [],
   "// targets": "to see all targets run: nx show project aylayoo-web --web",
-  "// deploy": "Deploys to Cloudflare Workers via OpenNext, the same way goal-tracker-web does. NEXT_PUBLIC_API_URL is inlined by `next build`, so the deploy targets set it inline — a Worker var would arrive too late to reach the client bundle.",
+  "// deploy": "Deploys to Cloudflare Workers via OpenNext, the same way goal-tracker-web does. NEXT_PUBLIC_API_URL is inlined by `next build`, so the deploy targets set it inline \u2014 a Worker var would arrive too late to reach the client bundle.",
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
@@ -83,13 +83,14 @@
       "// why not in options": "nx:run-commands forwards any key it does not recognise in `options` to the command line, so a comment key there became `bunx next build --// why=...` and the build failed with `unknown option '--//'`. At target level it is ignored. The `deploy` target has no comment inside `options`, which is why only `preview` broke.",
       "options": {
         "commands": [
-          "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
+          "ALLOW_LOCAL_API_URL=true NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://aylayoo-service.sbolorsaikhan4.workers.dev} bunx next build",
           "bunx opennextjs-cloudflare build --skipNextBuild",
           "bunx opennextjs-cloudflare preview"
         ],
         "parallel": false,
         "cwd": "apps/aylayoo/aylayoo-web"
-      }
+      },
+      "// why ALLOW_LOCAL_API_URL": "next.config.js refuses a production build whose NEXT_PUBLIC_API_URL is missing or local. A preview is a production build by NODE_ENV but never ships, and pointing it at a local API is the whole point, so it opts out. The deploy target deliberately does not."
     }
   }
 }

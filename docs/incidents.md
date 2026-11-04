@@ -17,9 +17,21 @@ blank, and `/admin` could not sign in. Server-rendered pages — `/aimags/[slug]
 `/places/[id]`, `/guides/[id]` — kept working, because those read through the `API` service
 binding rather than the browser.
 
-**Window.** The bad version went live 2026-11-02 03:14:25Z (11:14 +08) and was replaced
-2026-11-02 10:14:11Z (18:14 +08) — about **7 hours**. Earlier deploys may also have been
-affected; see "What we could not determine".
+**Window — start unknown.** The bundle was *confirmed* live from **2026-11-02 11:14 +08**
+(03:14:25Z, when version `2d5501c1` was deployed) until the hotfix at **18:14 +08**
+(10:14:11Z). That is the confirmed span, not the incident's length: it is when we happened to
+look, not when it began.
+
+The true start is **unknown**. `.env.local` on the build machine was dated 2026-09-27, and both
+deploy paths were affected from the moment it existed, so **every web deploy from 2026-09-27
+onwards is suspect** — that is `17ffc51d` (2026-10-31), `ab2c7388` (2026-10-24),
+`9ee62a5e` and `01f6767a` (2026-10-09), `f394c09e` (2026-10-02) and `dacf87cf` (2026-11-02),
+any of which may have served the same bundle.
+
+**That is inference, not evidence.** Cloudflare retains version metadata but not historical
+asset bundles, so no earlier version can be inspected to confirm or rule it out, and no request
+logs existed either (see "What we could not determine"). The honest summary is: confirmed for
+seven hours, plausibly for five weeks, unprovable either way.
 
 **Cause.** `NEXT_PUBLIC_API_URL` is inlined into the client bundle by `next build`. Both deploy
 paths set it as `${NEXT_PUBLIC_API_URL:-https://aylayoo-service…workers.dev}` — a shell default
@@ -39,6 +51,7 @@ reached the shell as unset.
 | `2bf0bd3` | the Nx `deploy` target pins the URL unconditionally |
 | `f06f113` | `cf:deploy` in `package.json` does too — the standalone Aylay-oo path had the same hole |
 | — | the local file is now `.env.development.local`, which Next reads only when `NODE_ENV=development`; `.gitignore` covers `.env*.local` |
+| — | `next.config.js` now **fails a production build** whose `NEXT_PUBLIC_API_URL` is missing or local (`scripts/api-url-guard.cjs`). The preview targets opt out with `ALLOW_LOCAL_API_URL=true`; the deploy paths do not |
 
 `preview` deliberately keeps the overridable form: pointing a preview at a local API is what it
 is for.
@@ -120,7 +133,20 @@ deploy after that date is suspect. That is inference, not evidence.
 
 **What changed because of this.** `observability` is now enabled on the service
 (`wrangler.jsonc`), so the same question will be answerable next time. What it retains is
-constrained on purpose — see `src/lib/logging.ts`: paths without query strings, errors reduced to
-a type and a redacted message, no KV keys (they embed the client IP), no bodies, no headers, no
-tokens. The point is to be able to investigate an incident without the logs becoming a second
-copy of the data.
+constrained on purpose:
+
+- **Our own logs** go through `src/lib/logging.ts`: paths with the query string stripped, errors
+  reduced to a type and a redacted message, no KV keys (they embed the client IP), no bodies, no
+  headers, no tokens.
+- **Cloudflare's invocation logs are off** (`observability.logs.invocation_logs: false`). The
+  Workers Logs docs describe an invocation log as carrying "details such as the Request,
+  Response, and related metadata" — a Request includes its URL, and our URLs carry query
+  strings, so an invocation log would re-record what we deliberately strip. The docs do not
+  enumerate whether headers or the client IP are included, and an unenumerated "related
+  metadata" is not worth opting into when the point of the exercise is knowing what the logs
+  hold.
+
+The cost: no automatic per-request record, so an incident is investigated through our own hono
+request line (path, status, timing) rather than Cloudflare's richer one. That is the trade — the
+question "was this path hit" stays answerable, and the logs do not become a second copy of the
+data we just removed from the API.

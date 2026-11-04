@@ -2,6 +2,11 @@
 
 const { existsSync, realpathSync } = require('fs');
 const { dirname, join, sep } = require('path');
+const { assertApiUrl } = require('./scripts/api-url-guard.cjs');
+
+/* Fails a production build that would inline a missing or local API URL. A no-op for
+ * `next dev` and for the preview targets, which set ALLOW_LOCAL_API_URL. See that file. */
+assertApiUrl();
 
 /**
  * The directory that owns the `node_modules` holding Next.

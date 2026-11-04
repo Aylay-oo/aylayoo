@@ -56,6 +56,27 @@
    * Before adding a console.* call anywhere in this service, read that file. */
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      /* Cloudflare's own invocation logs are OFF, and only our console output is kept.
+       *
+       * The Workers Logs docs say an invocation log carries "details such as the Request,
+       * Response, and related metadata", "enriched with information available to Cloudflare in
+       * the context of the invocation". A Request includes its URL, and our URLs carry query
+       * strings — so an invocation log would re-record exactly what lib/logging.ts strips out of
+       * ours. The docs do not enumerate whether headers or the client IP are included either,
+       * and an unenumerated "related metadata" is not something to opt into when the whole
+       * point of this setup is knowing what the logs hold.
+       *
+       * https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+       *
+       * The cost is real: without invocation logs there is no automatic per-request record, so
+       * an incident is investigated through the hono request line in our own logs (path, status,
+       * timing — no query) rather than Cloudflare's richer one. That is the trade we want: the
+       * question "was this path hit" stays answerable, and the logs do not become a second copy
+       * of the data. */
+      "invocation_logs": false
+    }
   }
 }
