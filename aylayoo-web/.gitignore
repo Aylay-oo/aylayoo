@@ -1,5 +1,7 @@
 # Local env with real values (the API URL is not secret, but keep the file out of git).
-.env.local
+# The glob, not just `.env.local`: the documented local file is `.env.development.local`, so a
+# bare `.env.local` entry would leave the one people actually create committable.
+.env*.local
 
 # OpenNext build output.
 .open-next/
