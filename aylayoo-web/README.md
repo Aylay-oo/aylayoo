@@ -30,8 +30,8 @@ Or with Nx from the repo root: `bunx nx run aylayoo-web:dev`.
 | `nx run aylayoo-web:lint` | eslint |
 | `nx run aylayoo-web:typecheck` | tsc --noEmit |
 | `nx run aylayoo-web:extract-photos` | re-extracts the design's photos into `public/images` |
-| `nx run aylayoo-web:preview` | builds and runs the real Worker locally on :8787 |
-| `nx run aylayoo-web:deploy` | builds and deploys to Cloudflare |
+| `nx run aylayoo-web:preview` | builds and runs the real Worker locally on :8787. Keeps `${NEXT_PUBLIC_API_URL:-<live>}`, so you can point it at a local API |
+| `nx run aylayoo-web:deploy` | builds and deploys to Cloudflare. Pins the live API **unconditionally** — see [Environment](#environment) |
 
 ## How it fits together
 
@@ -50,25 +50,57 @@ the browser gets WebP anyway.
 
 ## Environment
 
-`NEXT_PUBLIC_API_URL` — the only variable. Copy `.env.example` to `.env.local` for local work.
+`NEXT_PUBLIC_API_URL` — the only variable, and `src/lib/api.ts` already falls back to
+`http://localhost:4003` when it is unset, so **local work usually needs no env file at all**.
+To point dev somewhere else, copy `.env.example` to `.env.development.local`.
 
-The deploy and preview commands default it to the live API and let the shell win, so you can
-retarget a build without editing any file:
-
-```bash
-NEXT_PUBLIC_API_URL=https://api.aylayoo.com bunx nx run aylayoo-web:deploy
-```
-
-It is deliberately **not** kept in `.env.production`: `.env.local` takes precedence over that
-file, so anyone with a local env file would silently ship a bundle pointing at
-`localhost:4003`. An explicit variable on the build command outranks both.
+**Not `.env.local`.** That name is loaded in every mode, and it is how a production bundle
+pointing at `localhost:4003` reached the live site on 2026-11-02 — see
+[docs/incidents.md](../docs/incidents.md). `.env.development.local` is read only when
+`NODE_ENV=development`, which is `next dev` and nothing else. `.gitignore` covers
+`.env*.local`, so neither name can be committed.
 
 **It is inlined into the client bundle by `next build`**, which is the one thing to understand
 about deploying this app: setting it as a Worker var or a Cloudflare secret does nothing,
-because the browser code has already been compiled by then. The `deploy` and `preview` targets
-therefore set it on the build command itself. If the live site loads but every section is
-empty, this is the first thing to check — the bundle is probably still pointing at
+because the browser code has already been compiled by then. If the live site loads but every
+section is empty, this is the first thing to check — the bundle is probably still pointing at
 `localhost:4003`.
+
+### Why the deploy paths pin the URL
+
+Both deploy paths set it **unconditionally**:
+
+| | |
+|---|---|
+| `deploy` target in `project.json` | `NEXT_PUBLIC_API_URL=https://aylayoo-service…workers.dev bunx next build` |
+| `cf:deploy` in `package.json` | the same, for the standalone Aylay-oo repo |
+| `preview` target | keeps `${NEXT_PUBLIC_API_URL:-<live>}` **on purpose** — pointing a preview at a local API is what it is for |
+
+They used to all read `${NEXT_PUBLIC_API_URL:-<live>}`, and the `:-` default never fired,
+because **Nx and Bun both load `.env` files into the environment of the command they spawn**,
+so the variable was already set before the shell evaluated it. Next's own precedence is not the
+problem — an explicit variable on the build command does outrank `.env.local` for inlining;
+the problem is that nothing reached the shell as "unset".
+
+To retarget a build, change those lines or use `preview`:
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.aylayoo.com bunx nx run aylayoo-web:preview
+```
+
+### One more place `.env` files leak in
+
+`@opennextjs/cloudflare` does **not** read the build command's variable. Its
+`extractProjectEnvVars` parses the `.env` files directly to build
+`.open-next/cloudflare/next-env.mjs`, the Worker's runtime env snapshot, and it includes
+`.env.local` for every mode except `test`. Pinning the build commands does not reach it — only
+not having a `.env.local` does.
+
+In practice nothing reads that snapshot for this variable: `NEXT_PUBLIC_*` is inlined as a
+literal at build time, so `process.env.NEXT_PUBLIC_API_URL` appears in **zero** built files and
+`init.js`'s `process.env[key] ??= …` sets something no code looks at. It still should not carry
+`localhost:4003`, which is the other reason the local file is named
+`.env.development.local`.
 
 ```bash
 # confirm what a built bundle actually points at
@@ -82,6 +114,17 @@ bunx wrangler login                      # once
 bunx nx run aylayoo-web:preview          # optional: the real Worker on :8787
 bunx nx run aylayoo-web:deploy
 ```
+
+> **The build is intermittently flaky.** `next build` sometimes fails with eight Turbopack
+> errors, all `Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'`
+> across the three `next/font/google` families. It is a transient failure in the build-time font
+> fetch, not a code or dependency problem: **retry once and it passes**, with nothing changed.
+> Seen twice on 2026-11-02. Do not go looking for a config fix.
+
+> **Check the artefact, not the command.** Before any deploy:
+> ```bash
+> grep -rl "localhost:4003" .next/static .open-next/assets   # must print nothing
+> ```
 
 Or from inside this directory, without Nx: `bun run cf:deploy`.
 
@@ -252,6 +295,10 @@ that needs a consent banner.
   squashed route still looks like a plausible picture — so this is checked rather than eyeballed.
 - `src/lib/city-labels.spec.ts` is the city section's equivalent of `trips.spec.ts`: the
   headings there reach `t()` as variables, so the i18n coverage scan cannot see them.
+
+The guide fixtures in these specs deliberately carry **no** `phone` or `email`: the public API
+does not return either, and the `Guide` type no longer declares them. See
+[docs/incidents.md](../docs/incidents.md).
 
 jsdom lacks `matchMedia`, `ResizeObserver`, `PointerEvent` coordinates and `HTMLDialogElement`
 methods; `jest-setup.ts` fills the first two and the specs stub the rest where needed.

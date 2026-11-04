@@ -243,6 +243,27 @@ Two tsconfigs, because the tests need `node:` and `bun:` types the Worker delibe
 carry: `tsconfig.json` checks `src/` minus the tests, `tsconfig.spec.json` checks everything.
 The `typecheck` target runs both.
 
+## Logging
+
+`observability` is enabled in `wrangler.jsonc`, so Workers Logs retains what this service writes
+and it is queryable in the dashboard. It was switched on after an incident that could not be
+investigated because no request logs existed at all — see
+[docs/incidents.md](../docs/incidents.md).
+
+**What it retains is a privacy decision, and `src/lib/logging.ts` is where it is made.** Read
+that file before adding a `console.*` call anywhere in this service. The rules:
+
+| | |
+|---|---|
+| request log | the path with its **query string stripped**. hono's default logger writes the full path including the query; `logLine` strips it, so which endpoint was hit is kept and what somebody searched for is not |
+| errors | `errorSummary(err)` — the type and a redacted message only. Never the object, never `.stack`, never `.cause`: on D1 those carry the failing statement **and its bound parameters**, so logging `err` could have written a guide's phone number into a retained log the moment a registration insert failed |
+| rate limiter | the limiter's name and the message. Never the KV key, which embeds the client IP |
+| never logged | request bodies, headers, tokens |
+
+`redact()` is a last line of defence over anything that still reaches a log: email-shaped
+strings, Mongolian phone numbers, long digit runs, bearer tokens and JWTs are replaced by
+placeholders. `src/lib/logging.spec.ts` pins all of it, using invented values.
+
 ## Step 9 — Deploy to Cloudflare
 
 ```bash
@@ -365,6 +386,26 @@ seventh resource in `src/routes/admin-city.ts`:
 `city_events.link` takes **http(s) only**, the same rule as `guides.website` and now the same
 code: `httpUrl()` in `src/lib/validators.ts`. Zod's `.url()` accepts `javascript:alert(1)`, and
 this field is rendered as a link.
+
+### What a public guide response contains — and does not
+
+`/api/guides` and `/api/guides/:id` return an **explicit allow-list** of 18 columns, built in
+`publicColumns` at the top of `src/routes/guides.ts`:
+
+`id`, `type`, `name`, `fullName`, `bioMn`, `bioEn`, `languages`, `tripTypes`, `photoUrl`,
+`website`, `createdAt`, `experienceYears`, `experienceRange`, `routeMn`, `routeEn`, `car`,
+`rating`, `reviewCount` — plus the `aimags` array attached afterwards.
+
+**`phone` and `email` are never returned publicly**, and neither is `status`. They are columns
+on the `guides` table and they are readable on `/api/admin/guides`, which is how the team
+contacts a guide; a traveller reaches one through `POST /api/contact`, which takes the guide's
+id and exposes neither. The web app's `Guide` type omits both on purpose — `AdminGuide` adds
+them back.
+
+This list used to be subtractive (`getTableColumns(guides)` minus `status`), which published
+both fields for about a month. See [docs/incidents.md](../docs/incidents.md). **Add a column to
+this table and it stays private until somebody adds it to `publicColumns` deliberately** —
+`src/routes/guides.spec.ts` fails if either field reappears.
 
 ### Guide types
 
