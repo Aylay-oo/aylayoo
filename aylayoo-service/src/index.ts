@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { errorSummary, logLine } from './lib/logging';
 import { adminRoutes } from './routes/admin';
 import { aimagRoutes } from './routes/aimags';
 import { cityRoutesApi } from './routes/city';
@@ -12,7 +13,9 @@ import type { AppEnv } from './types';
 
 const app = new Hono<AppEnv>();
 
-app.use('*', logger());
+/* The custom print function matters: hono's default writes the path *with* its query string.
+ * See lib/logging.ts for what these logs may and may not contain. */
+app.use('*', logger(logLine));
 
 /* An Origin header is compared byte for byte by the browser, so the only forgiving thing we
  * can do is normalise what the config and the request agree to mean: drop surrounding space,
@@ -58,7 +61,10 @@ app.route('/api', contentRoutes); // /api/facts, /api/team, /api/images/*
 
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
 app.onError((err, c) => {
-  console.error(err);
+  /* The summary, never the error object. A D1 error carries the failing statement and its
+   * bound parameters, so logging `err` here could write a guide's phone number and email
+   * address into a retained log the moment a registration insert failed. */
+  console.error(errorSummary(err));
   return c.json({ error: 'Something went wrong' }, 500);
 });
 

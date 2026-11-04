@@ -36,5 +36,26 @@
   // Counters for the IP rate limiter on /register, /contact and /admin/login.
   "kv_namespaces": [
     { "binding": "RATE_LIMIT", "id": "033f8078ce1c43eebbdc9cd9186442f1" }
-  ]
+  ],
+
+  /* Workers Logs — retained and queryable in the dashboard, rather than `wrangler tail`'s
+   * live-only view.
+   *
+   * Added because an incident could not be investigated without it: guides' phone numbers and
+   * email addresses were served publicly for about a month, and there was no way to tell
+   * whether anyone had fetched them, in either direction. See docs/incidents.md.
+   *
+   * Sampling is 1 (keep everything). This Worker serves a small site, so there is no volume
+   * argument for dropping requests, and a sampled log is worth much less when the question is
+   * "did this specific path get hit".
+   *
+   * WHAT THIS RETAINS IS NOW A PRIVACY DECISION, and src/lib/logging.ts is where it is made:
+   * the request log carries the path with its query string stripped, errors are reduced to a
+   * type and a redacted message, and the rate limiter never logs its KV key (which embeds the
+   * client IP). No request bodies, no headers, no tokens. logging.spec.ts pins all of it.
+   * Before adding a console.* call anywhere in this service, read that file. */
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
 }

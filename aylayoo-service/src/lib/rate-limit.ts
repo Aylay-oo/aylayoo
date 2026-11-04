@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory';
+import { errorSummary } from './logging';
 import type { AppEnv } from '../types';
 
 type RateLimitOptions = {
@@ -49,7 +50,9 @@ export function rateLimit({ name, limit, windowSeconds }: RateLimitOptions) {
     try {
       used = Number(await kv.get(key)) || 0;
     } catch (err) {
-      console.error('Rate limit lookup failed, allowing request', err);
+      /* The limiter's name and the message only — never `err` itself and never `key`, which
+       * embeds the client IP. An IP is personal data whether or not it looks like one. */
+      console.error(`Rate limit lookup failed for "${name}", allowing request:`, errorSummary(err));
       return next();
     }
 
@@ -65,7 +68,7 @@ export function rateLimit({ name, limit, windowSeconds }: RateLimitOptions) {
         expirationTtl: Math.max(60, windowSeconds),
       });
     } catch (err) {
-      console.error('Rate limit write failed, allowing request', err);
+      console.error(`Rate limit write failed for "${name}", allowing request:`, errorSummary(err));
     }
 
     return next();
