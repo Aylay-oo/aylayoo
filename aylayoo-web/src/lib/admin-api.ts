@@ -18,6 +18,10 @@ export type AdminGuide = Guide & {
   status: 'pending' | 'approved' | 'rejected';
   phone: string;
   email: string;
+  /** The association's full legal form of the name. Admin-only, like the contact details. */
+  fullName: string | null;
+  /** ISO 8601 — see the note on ContactMessage.createdAt. */
+  createdAt: string;
 };
 
 export type ContactMessage = {
@@ -26,7 +30,8 @@ export type ContactMessage = {
   email: string | null;
   phone: string | null;
   message: string;
-  /** ISO 8601, for the same reason as Guide.createdAt. */
+  /* An ISO 8601 string, not a number: the column is a unix timestamp, but drizzle's
+   * `mode: 'timestamp'` hands back a Date and JSON serialises that as a string. */
   createdAt: string;
   guideId: number | null;
   subject: string | null;

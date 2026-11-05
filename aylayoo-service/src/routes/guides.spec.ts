@@ -26,12 +26,20 @@ const JWT_SECRET = 'test-secret-not-used-anywhere-else';
 
 let env: Env;
 
-/** Fields a guide must never expose publicly. */
-const PRIVATE_FIELDS = ['phone', 'email'] as const;
+/* Fields a guide must never expose publicly.
+ *
+ * `fullName` joined this list in Phase 3. It is the association's full legal form of the name,
+ * and the web app already refused to render it (see aylayoo-web .../guide-view.ts) while the
+ * API went on publishing it. `createdAt` went too — nothing renders it. */
+const PRIVATE_FIELDS = ['phone', 'email', 'fullName', 'createdAt'] as const;
 
-/** Fields the site genuinely needs, so the allow-list cannot be trimmed into uselessness. */
+/* Fields the site genuinely needs, so the allow-list cannot be trimmed into uselessness.
+ *
+ * `rating` and `reviewCount` are deliberately NOT here: Phase 3 withholds them until a guide
+ * has at least MIN_PUBLIC_REVIEWS published reviews, so they are absent for a guide with none.
+ * The floor has its own tests below and in tours.spec.ts. */
 const REQUIRED_PUBLIC_FIELDS = [
-  'id', 'type', 'name', 'languages', 'tripTypes', 'photoUrl', 'rating', 'reviewCount', 'aimags',
+  'id', 'type', 'name', 'languages', 'tripTypes', 'photoUrl', 'aimags',
 ] as const;
 
 /* Invented contact details, in the shapes the real columns hold, so a leak would be caught by
@@ -125,6 +133,21 @@ describe('the public guide shape', () => {
     for (const field of REQUIRED_PUBLIC_FIELDS) {
       expect(Object.hasOwn(data[0], field)).toBe(true);
     }
+  });
+
+  test('withholds rating and reviewCount below the review floor', async () => {
+    /* A guide with no reviews has no score to show. Absent rather than null, so the front
+     * end's "hide the stars while null" path is reached — and so this asserts on shape. */
+    const { data } = await (await call('/api/guides')).json() as { data: Record<string, unknown>[] };
+    expect(Object.hasOwn(data[0], 'rating')).toBe(false);
+    expect(Object.hasOwn(data[0], 'reviewCount')).toBe(false);
+  });
+
+  test('shows them once there are three', async () => {
+    await env.DB.prepare('UPDATE guides SET rating = 4.5, review_count = 3 WHERE id = 1').run();
+    const { data } = await (await call('/api/guides/1')).json() as { data: Record<string, unknown> };
+    expect(data.rating).toBe(4.5);
+    expect(data.reviewCount).toBe(3);
   });
 
   test('a pending guide is not listed, and 404s by id', async () => {

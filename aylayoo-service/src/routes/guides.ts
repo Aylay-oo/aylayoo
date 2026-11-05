@@ -9,7 +9,9 @@ import type { AppEnv } from '../types';
 
 export const guideRoutes = new Hono<AppEnv>();
 
-/* What a guide looks like to the public.
+/* What a guide looks like to the public. Exported, because routes/tours.ts embeds a guide in a
+ * tour and must narrow THIS list rather than write a second one — two independently-maintained
+ * allow-lists is how they drift apart, silently.
  *
  * An explicit allow-list, not `getTableColumns(guides)` minus a few. It used to be the latter,
  * with the comment "everything except status is safe to show publicly" — and that was wrong:
@@ -26,18 +28,16 @@ export const guideRoutes = new Hono<AppEnv>();
  *   email     A traveller contacts a guide through POST /api/contact, which takes the guide's
  *             id and never exposes either. Both are still readable on /api/admin/guides.
  */
-const publicColumns = {
+export const publicGuideColumns = {
   id: guides.id,
   type: guides.type,
   name: guides.name,
-  fullName: guides.fullName,
   bioMn: guides.bioMn,
   bioEn: guides.bioEn,
   languages: guides.languages,
   tripTypes: guides.tripTypes,
   photoUrl: guides.photoUrl,
   website: guides.website,
-  createdAt: guides.createdAt,
   experienceYears: guides.experienceYears,
   experienceRange: guides.experienceRange,
   routeMn: guides.routeMn,
@@ -46,6 +46,30 @@ const publicColumns = {
   rating: guides.rating,
   reviewCount: guides.reviewCount,
 } as const;
+
+/* How many published reviews a guide needs before their score is shown at all.
+ *
+ * Below this the fields are OMITTED, not zeroed or nulled — the front end already hides the
+ * stars while `rating` is null (see the column comment in db/schema.ts), so absence is the
+ * behaviour it is built for. A single five-star review rendering as "5.0" claims a precision
+ * the data does not have, and the guides it would flatter are real people whose livelihood the
+ * number affects. */
+export const MIN_PUBLIC_REVIEWS = 3;
+
+/**
+ * Strips `rating` and `reviewCount` unless the guide has enough published reviews.
+ *
+ * Returns a new object; the two keys are absent rather than present-and-null, so a test can
+ * assert on the shape and not just the value. Applied by every public route that returns a
+ * guide, including the embed in routes/tours.ts.
+ */
+export function withPublicRatings(row: Record<string, unknown>): Record<string, unknown> {
+  const count = typeof row.reviewCount === 'number' ? row.reviewCount : 0;
+  if (count >= MIN_PUBLIC_REVIEWS) return row;
+
+  const { rating: _rating, reviewCount: _reviewCount, ...rest } = row;
+  return rest;
+}
 
 // Adds the list of aimags each guide works in.
 export async function attachAimags<T extends { id: number }>(db: Db, rows: T[]) {
@@ -97,14 +121,16 @@ guideRoutes.get('/', async (c) => {
 
   const where = and(...conditions);
   const [rows, totals] = await Promise.all([
-    db.select(publicColumns).from(guides).where(where)
+    db.select(publicGuideColumns).from(guides).where(where)
       .orderBy(desc(guides.createdAt)).limit(limit).offset((page - 1) * limit),
     db.select({ total: count() }).from(guides).where(where),
   ]);
   const total = totals[0]?.total ?? 0;
 
+  const withAimags = await attachAimags(db, rows);
+
   return c.json({
-    data: await attachAimags(db, rows),
+    data: withAimags.map(withPublicRatings),
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
 });
@@ -113,12 +139,12 @@ guideRoutes.get('/', async (c) => {
 guideRoutes.get('/:id{[0-9]+}', async (c) => {
   const db = getDb(c.env.DB);
   const id = Number(c.req.param('id'));
-  const rows = await db.select(publicColumns).from(guides)
+  const rows = await db.select(publicGuideColumns).from(guides)
     .where(and(eq(guides.id, id), eq(guides.status, 'approved'))).limit(1);
   if (rows.length === 0) return c.json({ error: 'Guide not found' }, 404);
 
   const [guide] = await attachAimags(db, rows);
-  return c.json({ data: guide });
+  return c.json({ data: withPublicRatings(guide) });
 });
 
 // POST /api/guides/register   (multipart/form-data)

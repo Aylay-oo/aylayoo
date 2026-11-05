@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import {
-  CITY_STATUSES, CONTACT_KINDS, GUIDE_STATUSES, GUIDE_TYPES, ITINERARY_DAYS,
-  PHRASE_CATEGORIES, PLACE_CATEGORIES, PRICE_LEVELS, TIMES_OF_DAY, TIP_TOPICS, TRIP_TYPES,
+  CITY_STATUSES, CONSENT_SCOPES, CONSENT_SOURCES, CONTACT_KINDS, GUIDE_STATUSES, GUIDE_TYPES,
+  ITINERARY_DAYS, PHRASE_CATEGORIES, PLACE_CATEGORIES, PRICE_LEVELS, TIMES_OF_DAY, TIP_TOPICS,
+  TRIP_TYPES,
 } from '../db/schema';
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -320,3 +321,44 @@ export const reorderSchema = z.object({
  * price level or a day count may be cannot drift apart. */
 export const ALLOWED_PRICE_LEVELS = PRICE_LEVELS;
 export const ALLOWED_ITINERARY_DAYS = ITINERARY_DAYS;
+
+/* ---------------------------------------------------------------------------
+ * Phase 3, R1a-i — guide-led tours and consent.
+ *
+ * Same rule as the city schemas above: no `.default()` on a column-level field, because
+ * `.partial()` keeps defaults and would re-apply them on every PUT that omitted the field.
+ * ------------------------------------------------------------------------- */
+
+export const cityTourSchema = z.object({
+  titleMn: z.string().trim().min(1).max(200),
+  titleEn: z.string().trim().min(1).max(200),
+  summaryMn: nullishText(1000),
+  summaryEn: nullishText(1000),
+  guideId: z.number().int().positive(),
+  // A short city tour. The upper bound is a day; anything longer is an itinerary, not a tour.
+  durationMinutes: z.number().int().min(15).max(600).nullish(),
+  meetingPointMn: nullishText(300),
+  meetingPointEn: nullishText(300),
+  stops,
+  status: cityStatus,
+  sortOrder,
+});
+export const cityTourUpdateSchema = cityTourSchema.partial();
+
+/* Recording a consent.
+ *
+ * `evidenceNote` is required and has a floor, because "yes" with no account of how it was
+ * obtained is not something anybody can later check. The admin screen asks for a sentence. */
+export const guideConsentSchema = z.object({
+  guideId: z.number().int().positive(),
+  scope: z.enum(CONSENT_SCOPES),
+  source: z.enum(CONSENT_SOURCES),
+  evidenceNote: z.string().trim().min(8).max(500),
+});
+
+/** Revoking is its own action, not a field on an update — see routes/admin-tours.ts. */
+export const guideConsentRevokeSchema = z.object({
+  /* Why the consent is being withdrawn, for the same reason recording it needs evidence. The
+   * guide's own words where there are any. */
+  reason: z.string().trim().min(3).max(500).optional(),
+});

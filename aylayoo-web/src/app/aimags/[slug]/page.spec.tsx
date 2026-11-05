@@ -71,8 +71,6 @@ function guide(over: Partial<Guide> = {}): Guide {
     tripTypes: ['countryside'],
     photoUrl: null,
     website: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    fullName: null,
     experienceYears: 6,
     experienceRange: null,
     routeMn: null,

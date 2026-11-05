@@ -14,6 +14,7 @@ import {
 } from '../lib/validators';
 import type { AppEnv } from '../types';
 import { adminCityRoutes } from './admin-city';
+import { adminTourRoutes } from './admin-tours';
 import { attachAimags } from './guides';
 
 export const adminRoutes = new Hono<AppEnv>();
@@ -39,6 +40,12 @@ adminRoutes.use('*', requireAdmin);
 /* The Ulaanbaatar section's six resources, mounted here rather than in index.ts so they
  * inherit the middleware above instead of repeating it. */
 adminRoutes.route('/city', adminCityRoutes);
+
+/* Guide-led tours and the consent that gates publishing them. Not part of adminCityRoutes
+ * because a tour needs a check the generic CRUD factory knows nothing about — see
+ * routes/admin-tours.ts. Mounted at the admin root so consent lives at
+ * /api/admin/guide-consent rather than under /city. */
+adminRoutes.route('/', adminTourRoutes);
 
 // ---------- Guides ----------
 // GET /api/admin/guides?status=pending

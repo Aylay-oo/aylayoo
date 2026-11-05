@@ -9,6 +9,7 @@ import { contactRoutes } from './routes/contact';
 import { contentRoutes } from './routes/content';
 import { guideRoutes } from './routes/guides';
 import { placeRoutes } from './routes/places';
+import { tourRoutes } from './routes/tours';
 import type { AppEnv } from './types';
 
 const app = new Hono<AppEnv>();
@@ -54,6 +55,7 @@ app.get('/', (c) => c.json({ name: 'aylayoo-service', status: 'ok' }));
 app.route('/api/aimags', aimagRoutes);
 app.route('/api/places', placeRoutes);
 app.route('/api/guides', guideRoutes);
+app.route('/api/city/tours', tourRoutes); // guide-led tours (Phase 3)
 app.route('/api/city', cityRoutesApi); // the Ulaanbaatar section: itineraries, routes, food, tips, phrases, events
 app.route('/api/contact', contactRoutes);
 app.route('/api/admin', adminRoutes);

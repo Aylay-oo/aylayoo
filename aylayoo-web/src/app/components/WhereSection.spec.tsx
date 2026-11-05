@@ -23,9 +23,7 @@ const place = (over: Partial<Place> & Pick<Place, 'id' | 'aimagId' | 'nameMn'>):
 });
 
 const guide = (over: Partial<Guide> & Pick<Guide, 'id' | 'name' | 'aimags'>): Guide => ({
-  type: 'individual', bioMn: null, bioEn: null, languages: ['mn', 'en'], tripTypes: ['countryside'], photoUrl: null, website: null,
-  createdAt: '2026-09-26T18:16:43.000Z',
-  fullName: null, experienceYears: 5, experienceRange: null, routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null,
+  type: 'individual', bioMn: null, bioEn: null, languages: ['mn', 'en'], tripTypes: ['countryside'], photoUrl: null, website: null, experienceYears: 5, experienceRange: null, routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: null,
   rating: null, reviewCount: null, ...over,
 });
 

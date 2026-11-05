@@ -77,13 +77,10 @@ export type Guide = {
    * screens, which read /api/admin/guides and are the only place they belong. */
   photoUrl: string | null;
   website: string | null;
-  /* An ISO 8601 string, not a number. The column is a unix timestamp, but drizzle's
-   * `mode: 'timestamp'` hands back a Date and JSON serialises that as a string — verified
-   * against the running Worker. */
-  createdAt: string;
-  /** The guide's name as the tourism association lists it, father's name spelled out in
-   *  full. `name` is the display form the design uses, "Ж. Содномпил". */
-  fullName: string | null;
+  /* No `createdAt` or `fullName` either, for the same reason as phone and email: the public
+   * API does not send them. `fullName` is the association's full legal form of the name, which
+   * guide-view.ts already refused to pass across the client boundary while the API went on
+   * publishing it; `createdAt` is roster bookkeeping nothing renders. Both are on AdminGuide. */
   /** Either this or experienceYears, never both: someone who registers themselves gives a
    *  number, the association's roster gives a band like "4-6 жил". */
   experienceYears: number | null;
@@ -298,7 +295,8 @@ export type CityItinerary = CityRow & {
   summaryMn: string | null;
   summaryEn: string | null;
   stops: CityStop[];
-  /** ISO 8601, for the same reason as Guide.createdAt. */
+  /* An ISO 8601 string, not a number. The column is a unix timestamp, but drizzle's
+   * `mode: 'timestamp'` hands back a Date and JSON serialises that as a string. */
   createdAt: string;
 };
 

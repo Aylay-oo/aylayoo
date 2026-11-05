@@ -26,8 +26,6 @@ function guide(over: Partial<Guide> = {}): Guide {
     tripTypes: ['countryside'],
     photoUrl: null,
     website: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    fullName: null,
     experienceYears: 6,
     experienceRange: null,
     routeMn: 'Хөвсгөл, Архангай',
@@ -122,7 +120,7 @@ describe('generateMetadata', () => {
 
 describe('toGuideView', () => {
   it('drops the phone, email, legal name and ratings before the client boundary', () => {
-    const view = toGuideView(guide({ fullName: 'Болормаа Батбаяр', rating: 4.9, reviewCount: 12 }));
+    const view = toGuideView(guide({ rating: 4.9, reviewCount: 12 }));
 
     // Not "is not rendered" — not present at all. GuideDetail is a client component, so anything
     // it receives is serialised into the page source whether it is drawn or not.

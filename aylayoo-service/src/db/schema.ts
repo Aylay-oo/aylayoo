@@ -327,3 +327,76 @@ export const cityEvents = sqliteTable('city_events', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
+
+/* ---------------------------------------------------------------------------
+ * Phase 3, R1a-i — guide-led city tours, and the consent that gates them.
+ *
+ * A tour attaches a named real person to a public commitment. The fifty guides on the roster
+ * were listed by their tourism association, not signed up individually, so a tour must not go
+ * public until somebody has recorded that this guide agreed to it. The check lives in the API
+ * (see routes/admin-tours.ts), not the admin UI — a UI is not a boundary.
+ * ------------------------------------------------------------------------- */
+
+/* What a guide has agreed to, recorded one scope at a time.
+ *
+ * Separate scopes rather than one "consented" flag, because agreeing to be listed in a
+ * directory is not agreeing to be sent strangers' trip requests, and neither is agreeing to be
+ * publicly rated. Phase 3 uses `tours` and `requests`; `reviews` is declared now so R3 does not
+ * need a migration to add a value to this enum — SQLite has no ALTER TYPE, and drizzle's
+ * `enum` here is a TypeScript-side constraint on a TEXT column, so the set is cheap to widen in
+ * code but the column already accepts it. */
+export const CONSENT_SCOPES = ['tours', 'requests', 'reviews'] as const;
+
+/* Who told us. `association` covers the roster-wide sharing the association approved;
+ * `guide` is the guide themselves. Recorded because they are not equivalent: association
+ * consent is a reasonable starting point for being listed and a weak basis for being rated. */
+export const CONSENT_SOURCES = ['guide', 'association'] as const;
+
+export type ConsentScope = (typeof CONSENT_SCOPES)[number];
+export type ConsentSource = (typeof CONSENT_SOURCES)[number];
+
+export const guideConsent = sqliteTable('guide_consent', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  guideId: integer('guide_id')
+    .notNull()
+    .references(() => guides.id, { onDelete: 'cascade' }),
+  scope: text('scope', { enum: CONSENT_SCOPES }).notNull(),
+  source: text('source', { enum: CONSENT_SOURCES }).notNull(),
+  /* Which admin recorded it. No foreign key: the record of who vouched for a consent must
+   * outlive the admin account that did it. */
+  recordedByAdminId: integer('recorded_by_admin_id'),
+  /* How it was obtained — "phone call 2026-11-10", "signed association roster". Required by
+   * the validator, because unevidenced consent is not consent. */
+  evidenceNote: text('evidence_note').notNull(),
+  recordedAt: integer('recorded_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  /* Opting out sets this; the row is never deleted. A guide who withdraws and later agrees
+   * again should leave two records, not one rewritten one — and we need to be able to say when
+   * their tours came down and why. */
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }),
+});
+
+/* A short guide-led tour of the city.
+ *
+ * Deliberately no price column. A price is a fact about somebody else's business, and the
+ * project's standing rule is not to invent those — if the team wants one later it should be a
+ * free-text note they typed, not a number we guessed. */
+export const cityTours = sqliteTable('city_tours', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  titleMn: text('title_mn').notNull(),
+  titleEn: text('title_en').notNull(),
+  summaryMn: text('summary_mn'),
+  summaryEn: text('summary_en'),
+  /* A real foreign key, unlike contact_messages.guide_id: a tour without its guide is
+   * meaningless, so it should go when the guide does. */
+  guideId: integer('guide_id')
+    .notNull()
+    .references(() => guides.id, { onDelete: 'cascade' }),
+  durationMinutes: integer('duration_minutes'),
+  meetingPointMn: text('meeting_point_mn'),
+  meetingPointEn: text('meeting_point_en'),
+  // The same CityStop shape Phase 2 uses for itineraries and walking routes.
+  stops: text('stops', { mode: 'json' }).$type<CityStop[]>().notNull().default(sql`'[]'`),
+  status: text('status', { enum: CITY_STATUSES }).notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});

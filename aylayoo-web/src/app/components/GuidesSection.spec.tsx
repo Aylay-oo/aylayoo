@@ -13,8 +13,7 @@ import { GuidesSection } from './GuidesSection';
 const guide = (id: number, name: string, type: GuideType = 'individual'): Guide => ({
   id, name, type, bioMn: null, bioEn: null, languages: ['mn', 'en'],
   tripTypes: ['countryside'],
-  photoUrl: null, website: null, createdAt: '2026-09-26T18:16:43.000Z',
-  fullName: null, experienceYears: 5, experienceRange: null,
+  photoUrl: null, website: null, experienceYears: 5, experienceRange: null,
   routeMn: 'Хөвсгөл', routeEn: 'Khövsgöl', car: type === 'driver' ? 'Delica' : null,
   rating: null, reviewCount: null, aimags: [],
 });
@@ -255,7 +254,6 @@ describe('a guide from the tourism association roster', () => {
   const ROSTER = guide(1, 'Ж. Содномпил');
   const rosterGuide = {
     ...ROSTER,
-    fullName: 'Жаргал Содномпил',
     languages: ['en', 'ko'],
     experienceYears: null,
     experienceRange: '4-6 жил',
