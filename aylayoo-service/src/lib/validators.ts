@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import {
   CITY_STATUSES, CONSENT_SCOPES, CONSENT_SOURCES, CONTACT_KINDS, GUIDE_STATUSES, GUIDE_TYPES,
-  ITINERARY_DAYS, PHRASE_CATEGORIES, PLACE_CATEGORIES, PRICE_LEVELS, TIMES_OF_DAY, TIP_TOPICS,
-  TRIP_TYPES,
+  ITINERARY_DAYS, PHRASE_CATEGORIES, PLACE_CATEGORIES, PRICE_LEVELS, REQUEST_STATUSES,
+  TIMES_OF_DAY, TIP_TOPICS, TRIP_TYPES,
 } from '../db/schema';
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -361,4 +361,90 @@ export const guideConsentRevokeSchema = z.object({
   /* Why the consent is being withdrawn, for the same reason recording it needs evidence. The
    * guide's own words where there are any. */
   reason: z.string().trim().min(3).max(500).optional(),
+});
+
+/* ---------------------------------------------------------------------------
+ * Phase 3, R1a-ii — trip requests.
+ * ------------------------------------------------------------------------- */
+
+/* Contact details hidden in free text.
+ *
+ * The flow is staged: an admin passes the traveller's name, message, party size and dates to
+ * the guide, and the phone or email only once the guide accepts. A traveller who types their
+ * number into the message would route straight around that, so the message is REFUSED rather
+ * than stripped. Silently editing somebody's words is worse than telling them, and a stripped
+ * message would reach the guide looking like the traveller forgot to include it.
+ *
+ * Deliberately a little eager: `+976 7000 0001` and `seven double-oh` are not the same problem,
+ * and the first is the one that happens. Requiring seven digits rather than eight means a
+ * spaced or dashed number still trips it, at the cost of occasionally refusing a long party
+ * count — which the message tells them how to fix.
+ */
+const EMAIL_SHAPED = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
+const PHONE_SHAPED = /(?:\+?\d[\s-]*){7,}/;
+
+export const CONTACT_IN_MESSAGE =
+  'Please leave your phone number and email out of the message — the form asks for them '
+  + 'separately, and we only pass them to the guide once they have accepted.';
+
+/** True when free text appears to contain a way to contact somebody. */
+export const looksLikeContact = (text: string): boolean =>
+  EMAIL_SHAPED.test(text) || PHONE_SHAPED.test(text);
+
+const tripMessage = z
+  .string()
+  .trim()
+  // A floor, because "hi" is not a request a guide can answer, and it is what most spam is.
+  .min(20, 'Please tell the guide a little more about the trip you want')
+  .max(2000)
+  .refine((value) => !looksLikeContact(value), CONTACT_IN_MESSAGE);
+
+export const tripRequestSchema = z
+  .object({
+    travellerName: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().optional().or(z.literal('')),
+    phone: z.string().trim().min(6).max(30).optional().or(z.literal('')),
+    message: tripMessage,
+    partySize: z.number().int().min(1).max(40).nullish(),
+    preferredFrom: isoDate.nullish(),
+    preferredTo: isoDate.nullish(),
+    /* One of the two is required, and which one decides nothing else — a request may name a
+     * tour, a guide, or both. */
+    tourId: z.number().int().positive().nullish(),
+    guideId: z.number().int().positive().nullish(),
+    /* The honeypot. A field no person sees and no person fills in; a bot that fills every input
+     * it finds will. Named plausibly on purpose — `honeypot` would be a hint. Must be empty. */
+    website: z.literal('').optional(),
+  })
+  // The same rule the contact form uses: either one alone is fine, but not neither.
+  .refine((v) => !!v.email || !!v.phone, {
+    path: ['email'],
+    message: 'Give either a phone number or an email address, so the guide can reply',
+  })
+  // A request addressed to nobody cannot be relayed to anybody.
+  .refine((v) => !!v.tourId || !!v.guideId, {
+    path: ['tourId'],
+    message: 'Say which tour or which guide this request is for',
+  })
+  .refine((v) => !v.preferredFrom || !v.preferredTo || v.preferredTo >= v.preferredFrom, {
+    path: ['preferredTo'],
+    message: 'The last date is before the first date',
+  });
+
+/** What an admin may change about a request. Status transitions are checked in the handler. */
+export const tripRequestStatusSchema = z.object({
+  status: z.enum(REQUEST_STATUSES),
+});
+
+/* Erasure.
+ *
+ * Needs BOTH the reference and the contact the traveller used, because the only thing that
+ * proves ownership of a request is the contact detail we are being asked to delete. An admin
+ * confirms the pair matches before deleting, and a mismatch is refused without saying which
+ * half was wrong — otherwise the form becomes a way to test whether a given phone number is in
+ * the database.
+ */
+export const erasureLookupSchema = z.object({
+  reference: z.string().trim().min(1).max(40),
+  contact: z.string().trim().min(3).max(120),
 });

@@ -248,4 +248,23 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Манай баг баталгаажсан арга хэмжээг тогтмол нэмж байна.':
     'Our team adds events here once they are confirmed.',
   'Дэлгэрэнгүй мэдээлэл': 'More information',
+
+  /* ---- Phase 3: the privacy notice on traveller forms ----
+   * On the form itself rather than behind a link. Every claim here is enforced in
+   * aylayoo-service — see the header of PrivacyNotice.tsx for which test holds which one. */
+  'Таны мэдээллийн талаар': 'About your information',
+  'Бидэнд: таны нэр, холбоо барих хаяг, хүсэлтийн тайлбар, хүний тоо, хүссэн өдрүүд.':
+    'We collect: your name, your contact details, what you wrote, how many of you there are, and your preferred dates.',
+  'Бидэнд: таны сонгосон нэр, үнэлгээ, сэтгэгдэл.':
+    'We collect: the name you choose to show, your rating and your review.',
+  'Үүнийг манай баг харна. Хөтөч таны нэр, тайлбар, өдрүүдийг хүсэлтийг хүлээн авахаас нь өмнө, холбоо барих хаягийг зөвхөн хүлээн авсны дараа харна.':
+    'Our team sees this. The guide sees your name, your message and your dates before they accept — your contact details only once they have.',
+  'Сэтгэгдлийг манай баг уншиж, нийтлэхээс өмнө шалгана. Нийтлэгдсэний дараа сонгосон нэр, үнэлгээ, сэтгэгдэл нь олон нийтэд харагдана.':
+    'Our team reads every review before it is published. Once published, the name you chose, your rating and your review are public.',
+  'Холбоо барих хаягийг аяллын өдрөөс эсвэл хүсэлт хаагдсанаас 90 хоногийн дараа устгана. Хүсэлтийг 24 сарын дараа бүрэн устгана.':
+    'Your contact details are deleted 90 days after your trip dates, or after the request is closed — whichever is later. The whole request is deleted after 24 months.',
+  'Нийтэлсэн сэтгэгдлийг хугацаагүй хадгална. Сэтгэгдэлд холбоо барих хаяг байдаггүй.':
+    'A published review is kept indefinitely. A review never holds contact details.',
+  'Устгуулахыг хүсвэл хүсэлт илгээсний дараа гарах дугаараа хэлж бидэнтэй холбогдоно уу.':
+    'To have it deleted, contact us with the reference you are given after sending this.',
 };

@@ -10,6 +10,7 @@ import { contentRoutes } from './routes/content';
 import { guideRoutes } from './routes/guides';
 import { placeRoutes } from './routes/places';
 import { tourRoutes } from './routes/tours';
+import { tripRoutes } from './routes/trips';
 import type { AppEnv } from './types';
 
 const app = new Hono<AppEnv>();
@@ -57,6 +58,7 @@ app.route('/api/places', placeRoutes);
 app.route('/api/guides', guideRoutes);
 app.route('/api/city/tours', tourRoutes); // guide-led tours (Phase 3)
 app.route('/api/city', cityRoutesApi); // the Ulaanbaatar section: itineraries, routes, food, tips, phrases, events
+app.route('/api/trips', tripRoutes); // traveller trip requests (Phase 3)
 app.route('/api/contact', contactRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api', contentRoutes); // /api/facts, /api/team, /api/images/*

@@ -15,6 +15,7 @@ import {
 import type { AppEnv } from '../types';
 import { adminCityRoutes } from './admin-city';
 import { adminTourRoutes } from './admin-tours';
+import { adminTripRoutes } from './admin-trips';
 import { attachAimags } from './guides';
 
 export const adminRoutes = new Hono<AppEnv>();
@@ -46,6 +47,10 @@ adminRoutes.route('/city', adminCityRoutes);
  * routes/admin-tours.ts. Mounted at the admin root so consent lives at
  * /api/admin/guide-consent rather than under /city. */
 adminRoutes.route('/', adminTourRoutes);
+
+/* Trip requests: the relay, and the staging that keeps a traveller's contact details out of
+ * the response until the guide has accepted. See routes/admin-trips.ts. */
+adminRoutes.route('/', adminTripRoutes);
 
 // ---------- Guides ----------
 // GET /api/admin/guides?status=pending

@@ -400,3 +400,95 @@ export const cityTours = sqliteTable('city_tours', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
+
+/* ---------------------------------------------------------------------------
+ * Phase 3, R1a-ii — trip requests.
+ *
+ * The first traveller data this project holds, and its own migration so the table does not
+ * exist before the code that needs it. Everything about this table is shaped by one fact: it
+ * stores a stranger's phone number or email address, and `contact_messages` is the only
+ * precedent — which is read by admins and nobody else.
+ * ------------------------------------------------------------------------- */
+
+/* Where a request is in the human relay.
+ *
+ *   new       just arrived; nobody has looked.
+ *   relayed   an admin has passed the name, message, party size and dates to the guide. NOT
+ *             the contact details — those wait for `accepted`, so an unanswered request never
+ *             discloses a traveller's phone number.
+ *   accepted  the guide said yes. Only now may the admin share the contact.
+ *   declined  the guide said no.
+ *   completed the trip happened. In R3 this is what mints a review token.
+ *   cancelled the traveller withdrew, or it lapsed.
+ *
+ * Spam is not a status: an admin marking spam deletes the row. Keeping a stranger's contact
+ * details around in order to label them a spammer would be the wrong trade.
+ */
+export const REQUEST_STATUSES = [
+  'new', 'relayed', 'accepted', 'declined', 'completed', 'cancelled',
+] as const;
+
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
+/** Statuses after which nothing more is expected to happen. */
+export const CLOSED_REQUEST_STATUSES: readonly RequestStatus[] = [
+  'declined', 'completed', 'cancelled',
+];
+
+export const tripRequests = sqliteTable('trip_requests', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+
+  /* The handle the traveller is given, and the only one they have.
+   *
+   * Random, not the row id. A sequential id leaks how many requests the site receives, and it
+   * would let anyone enumerate other people's requests in an erasure form. Twelve characters
+   * from an unambiguous alphabet, unique. */
+  reference: text('reference').notNull().unique(),
+
+  travellerName: text('traveller_name').notNull(),
+  /* Nullable, and so is `phone`: the form asks for one or the other, and the validator enforces
+   * that at least one arrives — the same rule contactSchema already uses.
+   *
+   * BOTH ARE CLEARED ON A SCHEDULE. See contactClearedAt. */
+  email: text('email'),
+  phone: text('phone'),
+  /* Free text from the traveller. The validator REFUSES a message containing an email- or
+   * phone-shaped string rather than stripping it: a traveller who types their number here
+   * would otherwise route it around the staging above, and silently editing somebody's message
+   * is worse than telling them. */
+  message: text('message').notNull(),
+  partySize: integer('party_size'),
+  preferredFrom: text('preferred_from'), // YYYY-MM-DD
+  preferredTo: text('preferred_to'),
+
+  /* No foreign key on either, deliberately — the same reasoning as contact_messages.guide_id: a
+   * request has to outlive the listing it came from, or deleting a tour would erase the record
+   * of somebody having asked about it. */
+  tourId: integer('tour_id'),
+  guideId: integer('guide_id'),
+
+  status: text('status', { enum: REQUEST_STATUSES }).notNull().default('new'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  /** When the guide accepted. The gate on the admin screen revealing the contact block. */
+  acceptedAt: integer('accepted_at', { mode: 'timestamp' }),
+  /** When it reached a closed status — one half of the retention clock. */
+  closedAt: integer('closed_at', { mode: 'timestamp' }),
+
+  /* When `email` and `phone` were cleared.
+   *
+   * The clock is 90 days after the LATER of preferredTo and closedAt, not 90 days after
+   * creation: a trip booked four months ahead would otherwise have its contact details deleted
+   * before the trip. And never before a required review token has been delivered — see
+   * reviewTokenDeliveredAt. Set by the cleanup pass; null means the contact is still held. */
+  contactClearedAt: integer('contact_cleared_at', { mode: 'timestamp' }),
+
+  /* R3's review token, hashed. Declared now because the retention rule above depends on
+   * `reviewTokenDeliveredAt`, and a retention rule that references a column added two releases
+   * later is a retention rule nobody can implement today.
+   *
+   * Hashed, never plaintext: a d1 export must not hand out a capability. */
+  reviewTokenHash: text('review_token_hash'),
+  /** Null means the traveller has not been sent their review link, which BLOCKS the clearing. */
+  reviewTokenDeliveredAt: integer('review_token_delivered_at', { mode: 'timestamp' }),
+  reviewTokenUsedAt: integer('review_token_used_at', { mode: 'timestamp' }),
+});

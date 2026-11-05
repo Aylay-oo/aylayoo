@@ -66,6 +66,10 @@ export function translate(s: string): string {
   if ((m = s.match(/^(\d+) өдөр$/))) return `${m[1]} ${m[1] === '1' ? 'day' : 'days'}`;
   if ((m = s.match(/^(\d+)\/(\d+) зогсоол зураг дээр$/)))
     return `${m[1]} of ${m[2]} stops on the map`;
+  /* The privacy notice's deletion line, which names the traveller's own reference. A runtime
+   * pattern rather than a dictionary entry, because the reference is different every time. */
+  if ((m = s.match(/^Устгуулахыг хүсвэл (.+) дугаараа хэлж бидэнтэй холбогдоно уу\.$/)))
+    return `To have it deleted, contact us quoting reference ${m[1]}.`;
   if ((m = s.match(/^≈(\d+) км$/))) return `≈${m[1]} km`;
   if ((m = s.match(/^([\d.]+) · (\d+) үнэлгээ$/))) return `${m[1]} · ${m[2]} reviews`;
   if ((m = s.match(/^(\d+)–(\d+) сар$/))) return `${MONTHS[+m[1]]}–${MONTHS[+m[2]]}`;
