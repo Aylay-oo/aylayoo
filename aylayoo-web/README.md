@@ -305,9 +305,25 @@ that needs a consent banner.
 - `src/lib/city-labels.spec.ts` is the city section's equivalent of `trips.spec.ts`: the
   headings there reach `t()` as variables, so the i18n coverage scan cannot see them.
 
-The guide fixtures in these specs deliberately carry **no** `phone` or `email`: the public API
-does not return either, and the `Guide` type no longer declares them. See
-[docs/incidents.md](../docs/incidents.md).
+The guide fixtures in these specs deliberately carry **no** `phone`, `email`, `fullName` or
+`createdAt`: the public API returns none of them, and `Guide` no longer declares them —
+`AdminGuide` does. See [docs/incidents.md](../docs/incidents.md).
+
+### Optional API fields need a loose null check
+
+`rating` and `reviewCount` are **absent**, not null, until a guide has three published reviews.
+`GuideCard` and `InfoCard` tested `guide.rating !== null`, which is **true for an absent key**,
+so they entered the stars branch and called `undefined.toFixed(1)` — a TypeError that takes the
+guides carousel down for every guide without a score, which in production is all of them. Both
+now use `!= null`, loosely, which is right for null and undefined alike and so works against
+either version of the API.
+
+**The rule:** a field the API may omit gets `!= null`, never `!== null`.
+`GuidesSection.spec.tsx` pins both shapes — absent and explicitly null — because the service and
+this app deploy separately and either can be the newer one.
+
+> **Deploy order for the release that ships the review floor: web first, then service.** The
+> reverse is the usual order, and here it would crash the live site between the two steps.
 
 jsdom lacks `matchMedia`, `ResizeObserver`, `PointerEvent` coordinates and `HTMLDialogElement`
 methods; `jest-setup.ts` fills the first two and the specs stub the rest where needed.

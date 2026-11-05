@@ -56,12 +56,21 @@ adminTourRoutes.get('/tours', async (c) => {
   return c.json({ data });
 });
 
-/* Refuses a write that would publish a tour whose guide has not agreed to it.
+/* Refuses a write that would publish a tour its guide cannot carry.
+ *
+ * Two conditions, both about the guide rather than the tour:
+ *
+ *   1. They have agreed (`tours` consent).
+ *   2. They are `approved`. `approved` is the only active state — the others are `pending` and
+ *      `rejected` — and a tour whose guide is not approved is filtered out of every public
+ *      response anyway. Refusing here rather than letting it through means the admin is told,
+ *      instead of ending up with a row marked "published" that nobody can see. Silent
+ *      invisibility is the worse failure: it looks like the site is broken.
  *
  * Returns a Response to send, or null to carry on. 409 rather than 400: the request is
  * well-formed, the state of the world is what makes it impossible.
  */
-async function blockedByConsent(
+async function blockedFromPublishing(
   c: Context<AppEnv>,
   guideId: number,
   status: string | undefined,
@@ -69,9 +78,29 @@ async function blockedByConsent(
   if (status !== 'published') return null;
 
   const db = getDb(c.env.DB);
-  if (await hasConsent(db, guideId, 'tours')) return null;
 
-  return c.json({ error: consentRequiredMessage('tours') }, 409);
+  const [guide] = await db
+    .select({ status: guides.status })
+    .from(guides)
+    .where(eq(guides.id, guideId))
+    .limit(1);
+
+  /* No row at all: the guide was deleted between the checks above and here, or the id was
+   * never real. Either way the tour cannot be published. (A delete normally takes the tour with
+   * it — the FK cascades — so this is the narrow race, not the usual path.) */
+  if (!guide) return c.json({ error: 'That guide does not exist' }, 409);
+
+  if (guide.status !== 'approved') {
+    return c.json({
+      error: `That guide is "${guide.status}", not approved. A tour can only be published for an approved guide.`,
+    }, 409);
+  }
+
+  if (!(await hasConsent(db, guideId, 'tours'))) {
+    return c.json({ error: consentRequiredMessage('tours') }, 409);
+  }
+
+  return null;
 }
 
 adminTourRoutes.post('/tours', async (c) => {
@@ -89,7 +118,7 @@ adminTourRoutes.post('/tours', async (c) => {
     .limit(1);
   if (!guide) return c.json({ error: 'That guide does not exist' }, 400);
 
-  const blocked = await blockedByConsent(c, input.guideId, input.status);
+  const blocked = await blockedFromPublishing(c, input.guideId, input.status);
   if (blocked) return blocked;
 
   const [created] = await db.insert(cityTours).values(input).returning();
@@ -125,7 +154,7 @@ adminTourRoutes.put('/tours/:id{[0-9]+}', async (c) => {
     if (!guide) return c.json({ error: 'That guide does not exist' }, 400);
   }
 
-  const blocked = await blockedByConsent(c, guideId, status);
+  const blocked = await blockedFromPublishing(c, guideId, status);
   if (blocked) return blocked;
 
   const updated = await db

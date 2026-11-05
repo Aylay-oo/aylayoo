@@ -365,3 +365,98 @@ describe('the public guide shape no longer leaks the legal name', () => {
     expect(raw.includes(FAKE_FULL_NAME)).toBe(true);
   });
 });
+
+/* ---------------------------------------------------------------------------
+ * A published tour must never expose a guide who is not active
+ *
+ * `approved` is the only active state; the others are `pending` and `rejected`. A tour can
+ * outlive its guide's approval in three ways — the guide is rejected, set back to pending, or
+ * deleted — and each has to disappear from both public endpoints. Publishing one in that state
+ * is refused outright rather than silently accepted and then filtered, because a row marked
+ * "published" that nobody can see reads as a broken site.
+ * ------------------------------------------------------------------------- */
+describe('inactive guides are not exposed by their tours', () => {
+  beforeEach(async () => {
+    await recordConsent();
+    await createTour({ status: 'published' });
+  });
+
+  const publicList = async () =>
+    (await (await call('/api/city/tours')).json() as { data: unknown[] }).data;
+
+  test.each(['rejected', 'pending'])('a %s guide takes their tour off both endpoints', async (status) => {
+    await env.DB.prepare('UPDATE guides SET status = ? WHERE id = 1').bind(status).run();
+
+    expect(await publicList()).toHaveLength(0);
+    expect((await call('/api/city/tours/1')).status).toBe(404);
+  });
+
+  test('a deleted guide takes the tour with them, by cascade', async () => {
+    await env.DB.prepare('PRAGMA foreign_keys = ON').run();
+    await env.DB.prepare('DELETE FROM guides WHERE id = 1').run();
+
+    // The FK is ON DELETE CASCADE: the tour row is gone, not merely hidden.
+    const rows = await env.DB.prepare('SELECT COUNT(*) AS n FROM city_tours').all();
+    expect((rows.results[0] as { n: number }).n).toBe(0);
+    expect(await publicList()).toHaveLength(0);
+    expect((await call('/api/city/tours/1')).status).toBe(404);
+  });
+
+  test('re-approving the guide brings the tour back', async () => {
+    await env.DB.prepare("UPDATE guides SET status = 'rejected' WHERE id = 1").run();
+    expect(await publicList()).toHaveLength(0);
+
+    await env.DB.prepare("UPDATE guides SET status = 'approved' WHERE id = 1").run();
+    expect(await publicList()).toHaveLength(1);
+  });
+
+  test.each(['rejected', 'pending'])('publishing for a %s guide is refused', async (status) => {
+    await env.DB.prepare('UPDATE guides SET status = ? WHERE id = 1').bind(status).run();
+
+    const response = await call('/api/admin/tours', {
+      method: 'POST',
+      headers: { ...json, ...(await auth()) },
+      body: JSON.stringify(aTour({ status: 'published', titleMn: 'Хоёр дахь' })),
+    });
+
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toMatch(/not approved/i);
+  });
+
+  test('reassigning a published tour to a non-approved guide is refused', async () => {
+    await seedGuide(env.DB, 3, 'pending');
+    await recordConsent('tours', 3);
+
+    // Guide 3 has consent but is not approved — consent alone must not be enough.
+    const response = await call('/api/admin/tours/1', {
+      method: 'PUT',
+      headers: { ...json, ...(await auth()) },
+      body: JSON.stringify({ guideId: 3 }),
+    });
+
+    expect(response.status).toBe(409);
+    expect((await response.json() as { error: string }).error).toMatch(/not approved/i);
+  });
+
+  test('a draft may still point at a non-approved guide — drafts expose nobody', async () => {
+    await env.DB.prepare("UPDATE guides SET status = 'pending' WHERE id = 1").run();
+
+    const response = await call('/api/admin/tours', {
+      method: 'POST',
+      headers: { ...json, ...(await auth()) },
+      body: JSON.stringify(aTour({ titleMn: 'Нооруулга' })),
+    });
+    expect(response.status).toBe(201);
+  });
+
+  test('the admin list still shows the tour and says why it cannot be published', async () => {
+    await env.DB.prepare("UPDATE guides SET status = 'rejected' WHERE id = 1").run();
+
+    const { data } = await (await call('/api/admin/tours', { headers: await auth() }))
+      .json() as { data: { guideStatus: string; guideConsentScopes: string[] }[] };
+
+    // The screen needs both facts to explain a disabled publish button.
+    expect(data[0].guideStatus).toBe('rejected');
+    expect(data[0].guideConsentScopes).toContain('tours');
+  });
+});

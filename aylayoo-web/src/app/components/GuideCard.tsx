@@ -117,11 +117,18 @@ export function GuideCard({ guide, coverage, clone = false }: GuideCardProps) {
 
       <div className="g-foot">
         {/* No rating yet means no stars at all, rather than a zero or an invented number.
-            The empty span keeps the button on the right, where space-between puts it. */}
-        {guide.rating !== null ? (
+            The empty span keeps the button on the right, where space-between puts it.
+
+            `!= null`, loosely, on purpose: it has to catch undefined as well as null. The API
+            withholds `rating` and `reviewCount` entirely — the keys are absent, not null —
+            until a guide has enough published reviews, so a strict `!== null` is true for a
+            guide with no score and this branch then called `undefined.toFixed(1)` and took the
+            whole carousel down. Written loosely it is also correct against the older API shape
+            that sent an explicit null, which is what makes the two deployable in either order. */}
+        {guide.rating != null ? (
           <span className="rt">
             <span className="star">★</span> {guide.rating.toFixed(1)}{' '}
-            {guide.reviewCount !== null && <span>({guide.reviewCount})</span>}
+            {guide.reviewCount != null && <span>({guide.reviewCount})</span>}
           </span>
         ) : (
           <span className="rt" />

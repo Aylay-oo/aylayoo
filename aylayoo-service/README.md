@@ -392,9 +392,15 @@ this field is rendered as a link.
 `/api/guides` and `/api/guides/:id` return an **explicit allow-list** of 18 columns, built in
 `publicColumns` at the top of `src/routes/guides.ts`:
 
-`id`, `type`, `name`, `fullName`, `bioMn`, `bioEn`, `languages`, `tripTypes`, `photoUrl`,
-`website`, `createdAt`, `experienceYears`, `experienceRange`, `routeMn`, `routeEn`, `car`,
-`rating`, `reviewCount` — plus the `aimags` array attached afterwards.
+`id`, `type`, `name`, `bioMn`, `bioEn`, `languages`, `tripTypes`, `photoUrl`, `website`,
+`experienceYears`, `experienceRange`, `routeMn`, `routeEn`, `car` — plus the `aimags` array
+attached afterwards, and `rating`/`reviewCount` **only above the review floor** (below).
+
+Phase 3 removed two more: **`fullName`** (the association's full legal form of the name) and
+**`createdAt`**. The front end already refused to pass `fullName` across the client boundary —
+`guide-view.ts` builds a narrower `GuideView` field by field, and its spec asserts the field is
+"not present at all" — so the API was publishing a legal name the UI treated as private.
+Nothing consumed either outside test fixtures.
 
 **`phone` and `email` are never returned publicly**, and neither is `status`. They are columns
 on the `guides` table and they are readable on `/api/admin/guides`, which is how the team
@@ -404,8 +410,36 @@ them back.
 
 This list used to be subtractive (`getTableColumns(guides)` minus `status`), which published
 both fields for about a month. See [docs/incidents.md](../docs/incidents.md). **Add a column to
-this table and it stays private until somebody adds it to `publicColumns` deliberately** —
-`src/routes/guides.spec.ts` fails if either field reappears.
+this table and it stays private until somebody adds it to `publicGuideColumns` deliberately** —
+`src/routes/guides.spec.ts` fails if any of them reappears.
+
+`publicGuideColumns` is **exported**, because `routes/tours.ts` embeds a guide in a tour and
+narrows this list rather than writing a second one. Two independently-maintained allow-lists is
+how they drift apart, silently.
+
+### The review floor
+
+`rating` and `reviewCount` are **omitted from every public response** until a guide has at least
+`MIN_PUBLIC_REVIEWS` (3) published reviews. Omitted, not nulled: the front end already hides the
+stars while `rating` is null, so absence reaches the same path, and a test can assert on shape
+rather than value. One review rendering as "5.0" claims a precision the data does not have about
+somebody's livelihood.
+
+> **This changed a shape the live front end relied on.** `GuideCard` and `InfoCard` tested
+> `guide.rating !== null`, which is **true for an absent key**, so they entered the stars branch
+> and called `undefined.toFixed(1)` — a TypeError that takes the guides carousel down. Both now
+> use a loose `!= null`, which is correct for null *and* undefined and therefore works against
+> either API version. **The web app must be at or after that fix before the service ships the
+> floor.** For this release that means deploying **web first, then service** — the reverse of
+> the usual order.
+
+### Guide-led tours and inactive guides
+
+`/api/city/tours` inner-joins `guides` on `status = 'approved'`, so a tour disappears from both
+the list and the detail route the moment its guide is rejected or set back to pending, and the
+`ON DELETE CASCADE` on `city_tours.guide_id` removes the tour outright when a guide is deleted.
+Publishing a tour for a guide who is not approved is **refused with 409** rather than accepted
+and then filtered — a row marked "published" that nobody can see reads as a broken site.
 
 ### Guide types
 

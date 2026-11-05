@@ -162,7 +162,10 @@ export function InfoCard({
               <b>{guide.name}</b>
               <small>{t(TYPE_LABEL[guide.type])}</small>
             </div>
-            {guide.rating !== null && (
+            {/* `!= null` loosely: the API withholds `rating` entirely below the review floor,
+                so the key is absent and a strict `!== null` would call .toFixed on undefined.
+                See the longer note in GuideCard.tsx. */}
+            {guide.rating != null && (
               <span className="rate">
                 <span className="star">★</span> {guide.rating.toFixed(1)}
               </span>

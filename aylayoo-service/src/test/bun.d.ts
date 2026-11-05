@@ -12,7 +12,14 @@
 
 declare module 'bun:test' {
   export function describe(label: string, body: () => void): void;
-  export function test(label: string, body: () => void | Promise<void>): void;
+  /* `test` is callable and also carries `.each`, so it is declared as a value with a call
+   * signature rather than a plain function. Only the one-argument `each` form is declared,
+   * which is the only one used here. */
+  type TestFn = {
+    (label: string, body: () => void | Promise<void>): void;
+    each<T>(cases: readonly T[]): (label: string, body: (arg: T) => void | Promise<void>) => void;
+  };
+  export const test: TestFn;
   export function beforeAll(body: () => void | Promise<void>): void;
   export function afterAll(body: () => void | Promise<void>): void;
   export function beforeEach(body: () => void | Promise<void>): void;

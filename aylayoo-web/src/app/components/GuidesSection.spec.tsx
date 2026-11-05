@@ -324,3 +324,51 @@ describe('linking to a guide\u2019s own page', () => {
     for (const link of links) expect(link.getAttribute('href')).toBe('/guides/7');
   });
 });
+
+/* The API withholds `rating` and `reviewCount` entirely below the review floor — the keys are
+ * absent, not null. The card's check used to be a strict `!== null`, which is true for
+ * undefined, so it entered the stars branch and called `undefined.toFixed(1)`: a TypeError that
+ * took the whole carousel down for every guide without a score, which in production is all of
+ * them. These pin both shapes, because the service and the web app are deployed separately and
+ * either can be the newer one. */
+describe('a guide with no score', () => {
+  /** The new shape: the keys are not there at all. */
+  const withoutRating = (g: Guide): Guide => {
+    const { rating: _r, reviewCount: _c, ...rest } = g;
+    return rest as Guide;
+  };
+
+  it('renders no stars when rating and reviewCount are ABSENT', () => {
+    const { container } = setup(resource([withoutRating(guide(1, 'Б. Тест'))]));
+
+    expect(container.querySelector('.star')).toBeNull();
+    // And nothing crashed: the card is there.
+    expect(screen.getByText('Б. Тест')).toBeTruthy();
+  });
+
+  it('renders no empty parentheses when reviewCount is absent but rating is not', () => {
+    // Both keys have to be removed and only `rating` put back — leaving `reviewCount: null`
+    // in place is the shape the OLD API sent, which the strict check already handled, so the
+    // test would have passed for the wrong reason.
+    const { container } = setup(
+      resource([{ ...withoutRating(guide(1, 'Б. Тест')), rating: 4.8 } as Guide]),
+    );
+
+    expect(container.querySelector('.star')).toBeTruthy();
+    expect(container.textContent).toContain('4.8');
+    // `reviewCount` absent must not render "()" — the old strict check did.
+    expect(container.textContent).not.toContain('()');
+  });
+
+  it('still renders no stars for an explicit null, the older API shape', () => {
+    const { container } = setup(resource([guide(1, 'Б. Тест')]));
+    expect(container.querySelector('.star')).toBeNull();
+  });
+
+  it('renders the score when it is present', () => {
+    const { container } = setup(resource([{ ...guide(1, 'Б. Тест'), rating: 4.5, reviewCount: 12 }]));
+    expect(container.querySelector('.star')).toBeTruthy();
+    expect(container.textContent).toContain('4.5');
+    expect(container.textContent).toContain('(12)');
+  });
+});
