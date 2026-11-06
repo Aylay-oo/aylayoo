@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LangProvider, useLang } from '../../lib/i18n';
 import { DetailChrome } from '../components/DetailChrome';
 import { Events } from './Events';
@@ -47,9 +47,42 @@ const PANELS: Record<Tab, () => React.ReactNode> = {
   events: Events,
 };
 
+/** The tab keys, as a runtime set, so a hash can be checked against them rather than cast. */
+const TAB_KEYS: readonly string[] = TABS.map((entry) => entry.key);
+
+const tabFromHash = (hash: string): Tab | null => {
+  const key = hash.replace(/^#/, '');
+  return TAB_KEYS.includes(key) ? (key as Tab) : null;
+};
+
 function Body() {
   const { t } = useLang();
   const [tab, setTab] = useState<Tab>('itineraries');
+
+  /* Deep links: `/ulaanbaatar#tours` opens the tours tab.
+   *
+   * This is what makes the section reachable from the home page. Without it the only way to
+   * guided tours was to land here and notice the second of seven tabs, which is not reachable
+   * in any sense a visitor would recognise — see the home-page rule in docs/STATUS.md.
+   *
+   * A hash rather than `?tab=`: `useSearchParams()` would opt this statically-rendered page into
+   * dynamic rendering, and a hash is already how the home page's own nav addresses sections. It
+   * also never reaches the server, so it cannot appear in a log.
+   *
+   * Read on mount AND on hashchange. The mount read handles arriving from another page; the
+   * listener handles a same-page hash link, where React does not remount and the effect would
+   * otherwise never run again. An unknown or absent hash leaves the default tab alone, so a
+   * stale link degrades to the normal page rather than a blank one.
+   */
+  useEffect(() => {
+    const open = () => {
+      const target = tabFromHash(window.location.hash);
+      if (target) setTab(target);
+    };
+    open();
+    window.addEventListener('hashchange', open);
+    return () => window.removeEventListener('hashchange', open);
+  }, []);
   const Panel = PANELS[tab];
   const current = TABS.find((entry) => entry.key === tab);
 

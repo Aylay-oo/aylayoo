@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   ApiError, getCityEvents, getCityFood, getCityItineraries, getCityRoutes, getCityTips,
-  getPhrases, type CityEvent, type CityItinerary, type CityRouteItem, type CityTip,
+  getCityTours, getPhrases, type CityEvent, type CityItinerary, type CityRouteItem, type CityTip,
   type Phrase,
 } from '../../lib/api';
 import { UlaanbaatarPage } from './UlaanbaatarPage';
@@ -24,6 +24,7 @@ jest.mock('../../lib/api', () => {
     getCityTips: jest.fn(),
     getPhrases: jest.fn(),
     getCityEvents: jest.fn(),
+    getCityTours: jest.fn(),
   };
 });
 
@@ -33,6 +34,7 @@ const mockFood = jest.mocked(getCityFood);
 const mockTips = jest.mocked(getCityTips);
 const mockPhrases = jest.mocked(getPhrases);
 const mockEvents = jest.mocked(getCityEvents);
+const mockTours = jest.mocked(getCityTours);
 
 const TITLES = { mn: 'Улаанбаатар', en: 'Ulaanbaatar' };
 
@@ -111,6 +113,9 @@ beforeEach(() => {
   mockTips.mockResolvedValue([tip()]);
   mockPhrases.mockResolvedValue([phrase()]);
   mockEvents.mockResolvedValue([]);
+  // Nothing published, which is production's actual state on the day R1a shipped.
+  mockTours.mockResolvedValue([]);
+  window.location.hash = '';
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -282,6 +287,70 @@ describe('/ulaanbaatar', () => {
     click(tab(/Явган маршрут/));
 
     expect(await screen.findByText('Гандан → Чойжин')).toBeTruthy();
+  });
+
+  /* ---------------------------------------------------------------------------
+   * Deep links — what makes the section reachable from the home page
+   * ------------------------------------------------------------------------- */
+
+  it('opens the tours tab when arriving at #tours', async () => {
+    window.location.hash = '#tours';
+    open();
+
+    expect(tab(/Хөтөчтэй аялал/).getAttribute('aria-selected')).toBe('true');
+    expect(tab(/Аяллын хөтөлбөр/).getAttribute('aria-selected')).toBe('false');
+
+    await waitFor(() => expect(mockTours).toHaveBeenCalled());
+
+    /* The deep link still must not mount all seven panels: the five tabs nobody asked for
+     * never fetch. */
+    expect(mockRoutes).not.toHaveBeenCalled();
+    expect(mockFood).not.toHaveBeenCalled();
+    expect(mockTips).not.toHaveBeenCalled();
+    expect(mockPhrases).not.toHaveBeenCalled();
+    expect(mockEvents).not.toHaveBeenCalled();
+
+    /* The default tab does fetch once, and that is accepted rather than optimised away. The
+     * hash is read in an effect, so the first render is still the default tab — which is the
+     * point: this page is statically prerendered, and deciding the tab during the first render
+     * would make the client disagree with the server HTML whenever a hash was present. One
+     * spare request is a better trade than a hydration mismatch. */
+    expect(mockItineraries).toHaveBeenCalledTimes(1);
+  });
+
+  it('still works when no tours are published — the empty state, not an error', async () => {
+    /* The case that matters on the day this shipped: consent gates publishing, so the tab is
+     * legitimately empty. A home-page link that lands on a blank panel or a stack trace would
+     * be worse than no link at all. */
+    window.location.hash = '#tours';
+    open();
+
+    expect(await screen.findByText('Одоохондоо хөтөчтэй аялал нийтлээгүй байна.')).toBeTruthy();
+    expect(tab(/Хөтөчтэй аялал/).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('ignores a hash that names no tab, rather than showing nothing', async () => {
+    window.location.hash = '#not-a-tab';
+    open();
+
+    // Falls back to the default tab, so a stale or hand-typed link still gives a usable page.
+    expect(tab(/Аяллын хөтөлбөр/).getAttribute('aria-selected')).toBe('true');
+    expect(await screen.findByText('Нэг өдрийн Улаанбаатар')).toBeTruthy();
+  });
+
+  it('follows a hash change without a remount', async () => {
+    /* Clicking a #tours link while already on this page does not remount the component, so the
+     * mount-time read alone would silently do nothing. */
+    open();
+    await screen.findByText('Нэг өдрийн Улаанбаатар');
+
+    await act(async () => {
+      window.location.hash = '#phrases';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+
+    expect(tab(/Хэллэг/).getAttribute('aria-selected')).toBe('true');
+    expect(await screen.findByText('Баярлалаа')).toBeTruthy();
   });
 
   it('gives every tab an accessible name and every panel a label', async () => {

@@ -44,6 +44,13 @@ export function CitySection() {
           <Link className="btn btn-primary" href="/ulaanbaatar">
             {t('Улаанбаатарын хөтөлбөр, маршрут, хэллэг')}
           </Link>
+          {/* Guided tours, named on the home page rather than left as the second of seven tabs
+              somebody has to find. The hash opens that tab directly — see UlaanbaatarPage.
+              Safe when nothing is published: the tab owns its own empty state and says so, which
+              is a better answer than hiding the link and leaving the feature undiscoverable. */}
+          <Link className="btn btn-ghost" href="/ulaanbaatar#tours">
+            {t('Хөтөчтэй аялал')}
+          </Link>
           <button
             className="btn btn-ghost"
             type="button"
