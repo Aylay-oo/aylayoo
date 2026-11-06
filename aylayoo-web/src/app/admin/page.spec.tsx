@@ -96,7 +96,7 @@ async function signIn() {
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Админ нэвтрэх' })).toBeTruthy());
 
   fireEvent.change(document.querySelector('input[name="email"]') as HTMLInputElement, {
-    target: { value: 'ayalyoo123@gmail.com' },
+    target: { value: 'admin@example.com' },
   });
   fireEvent.change(document.querySelector('input[name="password"]') as HTMLInputElement, {
     target: { value: 'secret' },
@@ -138,7 +138,7 @@ describe('signing in', () => {
 
   it('sends what was typed, and opens the dashboard', async () => {
     await signIn();
-    expect(api.adminLogin).toHaveBeenCalledWith('ayalyoo123@gmail.com', 'secret');
+    expect(api.adminLogin).toHaveBeenCalledWith('admin@example.com', 'secret');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Гарах' })).toBeTruthy());
   });
 

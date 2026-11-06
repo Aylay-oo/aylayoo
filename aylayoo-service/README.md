@@ -181,8 +181,13 @@ bun scripts/hash-password.ts "choose-a-strong-password"
 Copy the printed hash, then:
 
 ```bash
-bunx wrangler d1 execute aylayoo-db --local --command "INSERT INTO admins (email, password_hash) VALUES ('ayalyoo123@gmail.com', 'PASTE_HASH_HERE')"
+bunx wrangler d1 execute aylayoo-db --local --command "INSERT INTO admins (email, password_hash) VALUES ('admin@example.com', 'PASTE_HASH_HERE')"
 ```
+
+`admin@example.com` is a **placeholder** — use your own address. This repo is public, and the
+real admin address is the username half of a credential, so it is not written down here. The
+production account already exists and its address is unchanged; nothing in this step applies to
+it.
 
 ## Step 8 — Run it and test
 
@@ -202,7 +207,7 @@ Test admin login in a second terminal:
 ```bash
 curl -X POST http://localhost:4003/api/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"ayalyoo123@gmail.com","password":"choose-a-strong-password"}'
+  -d '{"email":"admin@example.com","password":"choose-a-strong-password"}'
 ```
 
 ## Tests
@@ -342,7 +347,7 @@ same owned weekly task.
 bunx wrangler secret put JWT_SECRET                         # paste a NEW random string (not the local one)
 bunx wrangler d1 migrations apply aylayoo-db --remote
 # (removed: seed.sql is local-only — see Seeds in this README)
-bunx wrangler d1 execute aylayoo-db --remote --command "INSERT INTO admins (email, password_hash) VALUES ('ayalyoo123@gmail.com', 'PASTE_HASH_HERE')"
+bunx wrangler d1 execute aylayoo-db --remote --command "INSERT INTO admins (email, password_hash) VALUES ('admin@example.com', 'PASTE_HASH_HERE')"
 bunx wrangler deploy
 ```
 
