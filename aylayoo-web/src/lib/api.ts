@@ -373,3 +373,64 @@ export const getCityItinerary = (id: number) =>
   one<CityItinerary>(`/api/city/itineraries/${id}`);
 
 export const getCityRoute = (id: number) => one<CityRouteItem>(`/api/city/routes/${id}`);
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 — guide-led tours and trip requests.
+ * ------------------------------------------------------------------------- */
+
+/* The guide as a tour embeds them.
+ *
+ * Narrower than `Guide` on purpose, and it mirrors `tourGuideColumns` in the service's
+ * routes/tours.ts. `rating` and `reviewCount` are OPTIONAL here, not `| null`: the API omits
+ * the keys entirely below the review floor, and a type saying `number | null` would invite the
+ * strict `!== null` check that crashed the guide cards. See the note in GuideCard.tsx.
+ */
+export type TourGuide = {
+  id: number;
+  name: string;
+  photoUrl: string | null;
+  languages: string[];
+  rating?: number;
+  reviewCount?: number;
+};
+
+export type CityTour = {
+  id: number;
+  titleMn: string;
+  titleEn: string;
+  summaryMn: string | null;
+  summaryEn: string | null;
+  durationMinutes: number | null;
+  meetingPointMn: string | null;
+  meetingPointEn: string | null;
+  stops: CityStop[];
+  sortOrder: number;
+  guide: TourGuide;
+};
+
+export const getCityTours = () => list<CityTour>('/api/city/tours');
+
+export const getCityTour = (id: number) => one<CityTour>(`/api/city/tours/${id}`);
+
+/** What the traveller's form sends. `website` is the honeypot — always empty. */
+export type TripRequestInput = {
+  travellerName: string;
+  email?: string;
+  phone?: string;
+  message: string;
+  partySize?: number | null;
+  preferredFrom?: string | null;
+  preferredTo?: string | null;
+  tourId?: number | null;
+  guideId?: number | null;
+  website?: string;
+};
+
+/* The reference is all that comes back, and it is the only handle the traveller ever has — it
+ * is what an erasure request is keyed on. The confirmation screen must show it. */
+export const sendTripRequest = (input: TripRequestInput) =>
+  request<{ data: { reference: string }; message: string }>('/api/trips/requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });

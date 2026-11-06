@@ -10,6 +10,8 @@ import { ApprovedGuides } from './ApprovedGuides';
 import { CityTab } from './city/CityTab';
 import { Messages } from './Messages';
 import { PendingGuides } from './PendingGuides';
+import { RequestsTab } from './trips/RequestsTab';
+import { ToursTab } from './tours/ToursTab';
 
 /* The admin screen.
  *
@@ -21,12 +23,14 @@ import { PendingGuides } from './PendingGuides';
  * so a language switch would be furniture nobody needs.
  */
 
-type Tab = 'pending' | 'approved' | 'city' | 'messages';
+type Tab = 'pending' | 'approved' | 'city' | 'tours' | 'requests' | 'messages';
 
 const TABS: readonly { key: Tab; label: string }[] = [
   { key: 'pending', label: 'Хүлээгдэж байгаа бүртгэл' },
   { key: 'approved', label: 'Баталгаажсан хөтчүүд' },
   { key: 'city', label: 'Хот' },
+  { key: 'tours', label: 'Хөтөчтэй аялал' },
+  { key: 'requests', label: 'Аяллын хүсэлт' },
   { key: 'messages', label: 'Мессежүүд' },
 ];
 
@@ -103,6 +107,21 @@ export default function AdminPage() {
             {/* Everything the Ulaanbaatar section shows: itineraries, walking routes, places
                 to eat, the practical guide, the phrasebook and what is on. */}
             <CityTab token={token} onUnauthorized={signOut} />
+          </section>
+        )}
+
+        {tab === 'tours' && (
+          <section id="tab-tours" role="tabpanel" aria-label="Хөтөчтэй аялал">
+            {/* Guide-led tours, and the consent that decides whether one may be published. */}
+            <ToursTab token={token} onUnauthorized={signOut} />
+          </section>
+        )}
+
+        {tab === 'requests' && (
+          <section id="tab-requests" role="tabpanel" aria-label="Аяллын хүсэлт">
+            {/* The relay. A traveller's contact details stay hidden here until the guide has
+                accepted and that is recorded — the API withholds them, not this screen. */}
+            <RequestsTab token={token} onUnauthorized={signOut} />
           </section>
         )}
 

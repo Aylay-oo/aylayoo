@@ -5,7 +5,9 @@
  * below for why that, and not localStorage or a cookie.
  */
 
-import { API_URL, ApiError, type CityStatus, type Guide, type GuideType } from './api';
+import {
+  API_URL, ApiError, type CityStatus, type CityStop, type Guide, type GuideType,
+} from './api';
 
 /** An 8-hour token from POST /api/admin/login. */
 export type AdminToken = string;
@@ -207,3 +209,137 @@ export const reorderCity = (token: AdminToken, kind: CityKind, ids: number[]) =>
     token,
     { method: 'PATCH', ...json({ ids }) },
   );
+
+/* ---------------------------------------------------------------------------
+ * Phase 3 — tours, consent and the trip-request relay.
+ * ------------------------------------------------------------------------- */
+
+export type ConsentScope = 'tours' | 'requests' | 'reviews';
+export type ConsentSource = 'guide' | 'association';
+
+export type GuideConsent = {
+  id: number;
+  guideId: number;
+  scope: ConsentScope;
+  source: ConsentSource;
+  recordedByAdminId: number | null;
+  evidenceNote: string;
+  recordedAt: string;
+  /** Null while active. A revoked row stays as history rather than being deleted. */
+  revokedAt: string | null;
+};
+
+/** A tour as the admin list returns it: the row, plus why it can or cannot be published. */
+export type AdminTour = {
+  id: number;
+  titleMn: string;
+  titleEn: string;
+  summaryMn: string | null;
+  summaryEn: string | null;
+  guideId: number;
+  durationMinutes: number | null;
+  meetingPointMn: string | null;
+  meetingPointEn: string | null;
+  stops: CityStop[];
+  status: CityStatus;
+  sortOrder: number;
+  createdAt: string;
+  guideName: string | null;
+  guideStatus: 'pending' | 'approved' | 'rejected' | null;
+  /** Active scopes for this tour's guide, so the screen can explain a disabled publish. */
+  guideConsentScopes: ConsentScope[];
+};
+
+export const getAdminTours = (token: AdminToken) =>
+  adminRequest<{ data: AdminTour[] }>('/api/admin/tours', token).then((r) => r.data);
+
+export const createTour = (token: AdminToken, input: Record<string, unknown>) =>
+  adminRequest<{ data: AdminTour }>('/api/admin/tours', token, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  }).then((r) => r.data);
+
+export const updateTour = (token: AdminToken, id: number, input: Record<string, unknown>) =>
+  adminRequest<{ data: AdminTour }>(`/api/admin/tours/${id}`, token, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  }).then((r) => r.data);
+
+export const deleteTour = (token: AdminToken, id: number) =>
+  adminRequest<{ message: string }>(`/api/admin/tours/${id}`, token, { method: 'DELETE' });
+
+export const getGuideConsent = (token: AdminToken, guideId?: number) =>
+  adminRequest<{ data: GuideConsent[] }>(
+    `/api/admin/guide-consent${guideId ? `?guideId=${guideId}` : ''}`,
+    token,
+  ).then((r) => r.data);
+
+export const recordGuideConsent = (
+  token: AdminToken,
+  input: { guideId: number; scope: ConsentScope; source: ConsentSource; evidenceNote: string },
+) => adminRequest<{ data: GuideConsent }>('/api/admin/guide-consent', token, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+}).then((r) => r.data);
+
+/** Revoking also unpublishes that guide's tours; `toursUnpublished` says how many. */
+export const revokeGuideConsent = (token: AdminToken, id: number, reason?: string) =>
+  adminRequest<{ data: { id: number; scope: ConsentScope; toursUnpublished: number } }>(
+    `/api/admin/guide-consent/${id}/revoke`,
+    token,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) },
+  ).then((r) => r.data);
+
+export type RequestStatus =
+  'new' | 'relayed' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+
+/* A trip request as the admin list returns it.
+ *
+ * `email` and `phone` are OPTIONAL, not `| null`: the API omits them entirely until the guide
+ * has accepted, and `contactWithheld` says which case this is. The screen must branch on
+ * `contactWithheld` rather than on the fields being falsy — an absent field and an empty one
+ * mean different things here, and only one of them is "we are not telling you yet".
+ */
+export type AdminTripRequest = {
+  id: number;
+  reference: string;
+  referenceFormatted: string;
+  travellerName: string;
+  message: string;
+  partySize: number | null;
+  preferredFrom: string | null;
+  preferredTo: string | null;
+  tourId: number | null;
+  guideId: number | null;
+  status: RequestStatus;
+  createdAt: string;
+  acceptedAt: string | null;
+  closedAt: string | null;
+  contactClearedAt: string | null;
+  reviewTokenDeliveredAt: string | null;
+  contactWithheld: boolean;
+  email?: string;
+  phone?: string;
+  /** The GUIDE's contact, which the admin needs in order to relay at all. Admin-only. */
+  guide: { name: string | null; phone: string | null; email: string | null };
+  tourTitleMn: string | null;
+};
+
+export const getTripRequests = (token: AdminToken) =>
+  adminRequest<{ data: AdminTripRequest[] }>('/api/admin/trip-requests', token).then((r) => r.data);
+
+export const setTripRequestStatus = (token: AdminToken, id: number, status: RequestStatus) =>
+  adminRequest<{ data: AdminTripRequest }>(`/api/admin/trip-requests/${id}`, token, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }),
+  }).then((r) => r.data);
+
+export const deleteTripRequest = (token: AdminToken, id: number) =>
+  adminRequest<{ message: string }>(`/api/admin/trip-requests/${id}`, token, { method: 'DELETE' });
+
+/* Erasure. Needs the reference AND the contact the traveller used, and never says which half
+ * was wrong — see the handler in the service for why. */
+export const erasureLookup = (token: AdminToken, reference: string, contact: string) =>
+  adminRequest<{
+    data: { matched: boolean; id?: number; status?: RequestStatus; contactAlreadyCleared?: boolean };
+  }>('/api/admin/trip-requests/erasure-lookup', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reference, contact }),
+  }).then((r) => r.data);

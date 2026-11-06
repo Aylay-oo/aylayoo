@@ -21,7 +21,7 @@ import type { Env } from '../types';
  */
 
 const log = console.log;
-console.log = () => {};
+console.log = () => undefined;
 const { default: app } = await import('../index');
 afterAll(() => { console.log = log; });
 
@@ -268,6 +268,32 @@ describe('contact details are refused inside the message', () => {
   test('a message with ordinary numbers still gets through', async () => {
     expect((await withMessage('We are 2 adults and would like about 3 hours on the 5th.')).status)
       .toBe(201);
+  });
+
+  /* Dates.
+   *
+   * A date is seven or more digits separated by dashes, so before withoutDates() existed
+   * "we arrive on 2026-07-14" was refused — and the refusal told the traveller to take out a
+   * phone number they had not written, which is an error nobody can act on. Found by the web
+   * form's own spec for the same rule.
+   */
+  test.each([
+    // The two that genuinely exercise withoutDates: dashed, so PHONE_SHAPED would match.
+    'We arrive on 2026-07-14 and leave on the 20th.',
+    'We arrive 14-07-2026 and fly home on the 20th.',
+    /* These two pass even without the exclusion, because PHONE_SHAPED only treats spaces and
+     * dashes as separators — they are here to hold that still true if somebody ever widens the
+     * separator class, which would otherwise silently start refusing them. */
+    'Can we go on 14/07/2026, or would 15/07/2026 be better?',
+    'We land 14.07.2026 in the morning.',
+  ])('allows a date: %s', async (message) => {
+    expect((await withMessage(message)).status).toBe(201);
+  });
+
+  test('a number written in date-like groups is still refused', async () => {
+    /* The limit of the exclusion: 99-11-2233 has a four-digit tail, but 99 is not a day and
+     * 2233 is not a year, so it is not a date and does not get waved through. */
+    expect((await withMessage('ring me on 99-11-2233')).status).toBe(400);
   });
 });
 

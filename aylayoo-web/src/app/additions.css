@@ -796,3 +796,133 @@
   font-size: 13px;
 }
 .admin-stop-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ======================================================================
+   Phase 3 — guide-led tours, the trip request form, and the admin relay.
+
+   Everything here reuses the existing tokens and the card shapes above; the only genuinely
+   new shapes are the reference block a traveller is shown after submitting, and the two
+   notice lines the relay screen needs (one warning, one confirmation).
+
+   Every width below is fluid or wraps. The request dialog is the longest form on the site —
+   name, contact, message, three date/party fields, a privacy notice and two buttons — so it
+   is the one most likely to overflow a phone, which is why .dlg-scroll is reused for it and
+   why .fld-row collapses at 460px like the registration form's does.
+   ====================================================================== */
+
+/* ---- a tour card ---- */
+/* The guide's line sits between the blurb and the footer: whose tour it is matters more than
+   how long it is, and on a narrow card it must wrap rather than squeeze the rating out. */
+.tour-guide {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.tour-guide b { color: var(--ink); }
+.tour-guide .admin-muted { font-size: 13px; }
+
+/* ---- the tour page ---- */
+.tour-lead {
+  margin: 18px 0 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft-2);
+}
+.tour-lead h2 { margin: 0 0 8px; font-size: 15px; color: var(--muted); font-weight: 700; }
+.tour-lead p { margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tour-lead p:last-child { margin-bottom: 0; }
+
+/* The two buttons under a detail page's content. Wraps, so the secondary link drops below the
+   primary action on a phone instead of shrinking it. */
+.d-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+
+/* ---- the reference, on the confirmation screen ---- */
+/* Shown large and in a monospace face because somebody will read it down a phone or copy it
+   off a screenshot — and it is the only handle they will ever have on the request. */
+.trip-reference {
+  display: grid;
+  gap: 4px;
+  margin: 14px 0 8px;
+  padding: 12px 16px;
+  border: 1px dashed var(--green);
+  border-radius: 14px;
+  background: var(--mint);
+  text-align: center;
+}
+.trip-reference span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.trip-reference b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  color: var(--green-d);
+  overflow-wrap: anywhere;
+}
+
+.trip-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Party size, from, until — three fields where the shared .fld-row expects two, so it gets a
+   fluid track count instead of wrapping the third onto a line of its own. minmax collapses to
+   one column on a narrow phone before the 460px rule above even applies. */
+.dlg .fld-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+/* ---- admin: forms, notices, the relay ---- */
+/* .admin-form is .admin-city-form under a name that is not about the city section, now that
+   tours, consent and erasure all use it. */
+.admin-form { display: grid; gap: 14px; margin-top: 4px; }
+.admin-form .fld-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.admin-form .fld-row > .fld { flex: 1 1 180px; min-width: 0; }
+.admin-form h3 { margin: 0; font-size: 16px; }
+
+.admin-fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.admin-fieldset > legend { font-weight: 700; font-size: 13.5px; color: var(--muted); }
+
+/* A state an admin has to act on, and one that confirms something happened. Both are inline
+   notices rather than toasts: this screen is read, not watched, and a toast that has already
+   faded is no use to somebody working down a list. */
+.admin-warn {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.admin-ok {
+  margin: 0;
+  color: var(--green-d);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.admin-request .admin-city-top { flex-wrap: wrap; row-gap: 6px; }
+.admin-request time { color: var(--muted); font-size: 12.5px; }
+
+.admin-erasure {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 560px) {
+  /* The relay's action row is the longest in /admin — up to three state buttons plus delete.
+     Full-width buttons beat four shrunken ones nobody can hit. */
+  .admin-request .admin-actions { display: grid; gap: 8px; }
+  .admin-request .admin-actions .btn { width: 100%; }
+  .trip-reference b { font-size: 17px; }
+}

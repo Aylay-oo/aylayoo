@@ -70,6 +70,13 @@ export function translate(s: string): string {
    * pattern rather than a dictionary entry, because the reference is different every time. */
   if ((m = s.match(/^Устгуулахыг хүсвэл (.+) дугаараа хэлж бидэнтэй холбогдоно уу\.$/)))
     return `To have it deleted, contact us quoting reference ${m[1]}.`;
+  /* A tour's duration, standing on its own rather than after "Хугацаа:" — the tour cards and
+   * the tour page show it as a bare badge. All three are anchored at both ends, which is what
+   * keeps them from overlapping: an unanchored hours pattern would match "1 цаг 30 мин" and
+   * silently drop the minutes. */
+  if ((m = s.match(/^(\d+) цаг (\d+) мин$/))) return `${m[1]} h ${m[2]} min`;
+  if ((m = s.match(/^(\d+) цаг$/))) return `${m[1]} h`;
+  if ((m = s.match(/^(\d+) мин$/))) return `${m[1]} min`;
   if ((m = s.match(/^≈(\d+) км$/))) return `≈${m[1]} km`;
   if ((m = s.match(/^([\d.]+) · (\d+) үнэлгээ$/))) return `${m[1]} · ${m[2]} reviews`;
   if ((m = s.match(/^(\d+)–(\d+) сар$/))) return `${MONTHS[+m[1]]}–${MONTHS[+m[2]]}`;

@@ -1,9 +1,9 @@
 import type {
-  Aimag, CityItinerary, CityRouteItem, Guide, Pagination, Place,
+  Aimag, CityItinerary, CityRouteItem, CityTour, Guide, Pagination, Place,
 } from '../lib/api';
 import { ApiError } from '../lib/api';
 import {
-  getAimags, getCityItineraries, getCityRoutes, getGuides, getPlaces,
+  getAimags, getCityItineraries, getCityRoutes, getCityTours, getGuides, getPlaces,
 } from '../lib/api-server';
 import robots from './robots';
 import sitemap from './sitemap';
@@ -21,6 +21,7 @@ jest.mock('../lib/api-server', () => {
     getGuides: jest.fn(),
     getCityItineraries: jest.fn(),
     getCityRoutes: jest.fn(),
+    getCityTours: jest.fn(),
   };
 });
 
@@ -29,6 +30,7 @@ const mockPlaces = jest.mocked(getPlaces);
 const mockGuides = jest.mocked(getGuides);
 const mockItineraries = jest.mocked(getCityItineraries);
 const mockRoutes = jest.mocked(getCityRoutes);
+const mockTours = jest.mocked(getCityTours);
 
 const aimag = (slug: string): Aimag => ({
   id: 1, slug, nameMn: 'Аймаг', nameEn: 'Aimag', region: 'khangai',
@@ -59,6 +61,12 @@ const cityRoute = (id: number): CityRouteItem => ({
   stops: [], status: 'published', sortOrder: 0, createdAt: '',
 });
 
+const cityTour = (id: number): CityTour => ({
+  id, titleMn: 'Аялал', titleEn: 'Tour', summaryMn: null, summaryEn: null,
+  durationMinutes: 150, meetingPointMn: null, meetingPointEn: null, stops: [], sortOrder: 0,
+  guide: { id: 42, name: 'Хөтөч', photoUrl: null, languages: [] },
+});
+
 const page = (data: Guide[], totalPages: number): { data: Guide[]; pagination: Pagination } => ({
   data,
   pagination: { page: 1, limit: 50, total: totalPages * 50, totalPages },
@@ -70,6 +78,7 @@ beforeEach(() => {
   mockGuides.mockResolvedValue(page([guide(1)], 1));
   mockItineraries.mockResolvedValue([itinerary(7)]);
   mockRoutes.mockResolvedValue([cityRoute(9)]);
+  mockTours.mockResolvedValue([cityTour(11)]);
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -95,6 +104,7 @@ describe('sitemap', () => {
       'https://aylayoo.com/ulaanbaatar',
       'https://aylayoo.com/ulaanbaatar/itineraries/7',
       'https://aylayoo.com/ulaanbaatar/routes/9',
+      'https://aylayoo.com/ulaanbaatar/tours/11',
       'https://aylayoo.com/guides/1',
     ]);
   });
@@ -116,11 +126,24 @@ describe('sitemap', () => {
     const down = () => Promise.reject(new ApiError('Сервертэй холбогдож чадсангүй'));
     mockItineraries.mockImplementation(down);
     mockRoutes.mockImplementation(down);
+    mockTours.mockImplementation(down);
 
     const urls = (await sitemap()).map((entry) => entry.url);
     expect(urls).toContain('https://aylayoo.com/ulaanbaatar');
     expect(urls.some((url) => url.includes('/itineraries/'))).toBe(false);
     expect(urls.some((url) => url.includes('/ulaanbaatar/routes/'))).toBe(false);
+    expect(urls.some((url) => url.includes('/ulaanbaatar/tours/'))).toBe(false);
+  });
+
+  it('drops a tour whose guide withdrew consent, because the API stops listing it', async () => {
+    /* Not a web behaviour so much as a dependency worth pinning: the service inner-joins on
+     * consent, so an unpublished tour simply stops coming back — and the sitemap must not keep
+     * advertising a URL that now 404s. */
+    mockTours.mockResolvedValue([]);
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls.some((url) => url.includes('/ulaanbaatar/tours/'))).toBe(false);
+    expect(urls).toContain('https://aylayoo.com/ulaanbaatar');
   });
 
   it('uses absolute URLs, which a sitemap requires', async () => {
@@ -175,6 +198,7 @@ describe('sitemap', () => {
     mockGuides.mockImplementation(down);
     mockItineraries.mockImplementation(down);
     mockRoutes.mockImplementation(down);
+    mockTours.mockImplementation(down);
 
     expect((await sitemap()).map((e) => e.url)).toEqual([
       'https://aylayoo.com/',

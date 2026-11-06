@@ -16,8 +16,8 @@
 
 import {
   API_URL, ApiError,
-  type AimagWithPlaces, type Aimag, type CityItinerary, type CityRouteItem, type Guide,
-  type Pagination, type Place,
+  type AimagWithPlaces, type Aimag, type CityItinerary, type CityRouteItem, type CityTour,
+  type Guide, type Pagination, type Place,
 } from './api';
 
 /** The shape a service binding exposes: a fetch that takes a Request. */
@@ -113,3 +113,14 @@ export const getCityItineraries = async () =>
 
 export const getCityRoutes = async () =>
   (await read<{ data: CityRouteItem[] }>('/api/city/routes')).data;
+
+/* Guide-led tours. `getCityTour` is what /ulaanbaatar/tours/[id] renders from, and
+ * `getCityTours` is for the sitemap.
+ *
+ * Both return published tours whose guide is approved and consenting — the service inner-joins
+ * on that, so a tour withdrawn because consent was revoked disappears from the sitemap on the
+ * next crawl rather than lingering as a 404 a crawler keeps asking for. */
+export const getCityTour = (id: number) => one<CityTour>(`/api/city/tours/${id}`);
+
+export const getCityTours = async () =>
+  (await read<{ data: CityTour[] }>('/api/city/tours')).data;

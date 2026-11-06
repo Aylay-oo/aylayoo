@@ -6,6 +6,7 @@ import { DetailChrome } from '../components/DetailChrome';
 import { Events } from './Events';
 import { Food } from './Food';
 import { Itineraries } from './Itineraries';
+import { Tours } from './Tours';
 import { Phrasebook } from './Phrasebook';
 import { PracticalGuide } from './PracticalGuide';
 import { WalkingRoutes } from './WalkingRoutes';
@@ -17,15 +18,18 @@ import { WalkingRoutes } from './WalkingRoutes';
  * each one drives map state this page has no map for. What this page needs from the chrome is
  * the same two things a detail page needs — a way back and the language switch.
  *
- * Six tabs, and only the open one is mounted. That is not a micro-optimisation: each tab owns
+ * Seven tabs, and only the open one is mounted. That is not a micro-optimisation: each tab owns
  * its own fetch, so mounting all six would fire six requests to show one, and coming back to a
  * tab re-fetches, which is what you want from a page whose content the team is editing live.
  */
 
-type Tab = 'itineraries' | 'routes' | 'food' | 'guide' | 'phrases' | 'events';
+type Tab = 'itineraries' | 'tours' | 'routes' | 'food' | 'guide' | 'phrases' | 'events';
 
 const TABS: readonly { key: Tab; label: string }[] = [
   { key: 'itineraries', label: 'Аяллын хөтөлбөр' },
+  /* Second, not first: somebody arriving here is usually deciding what to do before
+   * deciding whether to do it with a guide. */
+  { key: 'tours', label: 'Хөтөчтэй аялал' },
   { key: 'routes', label: 'Явган маршрут' },
   { key: 'food', label: 'Хоол, ресторан' },
   { key: 'guide', label: 'Хэрэгтэй мэдээлэл' },
@@ -35,6 +39,7 @@ const TABS: readonly { key: Tab; label: string }[] = [
 
 const PANELS: Record<Tab, () => React.ReactNode> = {
   itineraries: Itineraries,
+  tours: Tours,
   routes: WalkingRoutes,
   food: Food,
   guide: PracticalGuide,

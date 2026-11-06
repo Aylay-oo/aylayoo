@@ -26,7 +26,7 @@ const JWT_SECRET = 'test-secret-not-used-anywhere-else';
  * the swap: hono's `logger()` captures console.log at the moment it is called, which is while
  * index.ts is being evaluated — so a beforeAll would be too late. */
 const log = console.log;
-console.log = () => {};
+console.log = () => undefined;
 const { default: app } = await import('../index');
 afterAll(() => { console.log = log; });
 

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import type { Guide } from '../lib/api';
 import {
-  getAimags, getCityItineraries, getCityRoutes, getGuides, getPlaces,
+  getAimags, getCityItineraries, getCityRoutes, getCityTours, getGuides, getPlaces,
 } from '../lib/api-server';
 import { SITE_URL } from '../lib/seo';
 
@@ -42,13 +42,14 @@ async function allGuides(): Promise<Guide[]> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [aimags, places, guides, itineraries, routes] = await Promise.all([
+  const [aimags, places, guides, itineraries, routes, tours] = await Promise.all([
     safely(getAimags),
     safely(() => getPlaces()),
     safely(allGuides),
-    // Both return published rows only, so a draft is never listed for a crawler to find.
+    // All three return published rows only, so a draft is never listed for a crawler to find.
     safely(getCityItineraries),
     safely(getCityRoutes),
+    safely(getCityTours),
   ]);
 
   const lastModified = new Date();
@@ -87,6 +88,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     ...routes.map((route) => ({
       url: at(`/ulaanbaatar/routes/${route.id}`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+
+    /* A tour sits with the other city pages rather than with the guides, because it is a
+     * thing to do in Ulaanbaatar — but it is the one city page that can vanish for a reason
+     * nobody edited: revoking a guide's consent unpublishes their tours. */
+    ...tours.map((tour) => ({
+      url: at(`/ulaanbaatar/tours/${tour.id}`),
       lastModified,
       changeFrequency: 'monthly' as const,
       priority: 0.6,

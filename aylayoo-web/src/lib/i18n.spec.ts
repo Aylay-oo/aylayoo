@@ -137,6 +137,18 @@ describe('translate', () => {
       expect(translate('Хэл: Англи, Солонгос')).toBe('Хэл: English, Korean');
     });
 
+    /* A tour's duration appears as a badge on its own, not after a label, so it needs its own
+     * patterns. The "1 цаг 30 мин" case is the one that matters: it is what fails if the hours
+     * pattern is ever left unanchored, because it would match and drop the minutes. */
+    it.each([
+      ['90 мин', '90 min'],
+      ['2 цаг', '2 h'],
+      ['1 цаг 30 мин', '1 h 30 min'],
+      ['3 цаг 15 мин', '3 h 15 min'],
+    ])('a bare duration: %s → %s', (mn, en) => {
+      expect(translate(mn)).toBe(en);
+    });
+
     it('but the trip duration only translates whole', () => {
       // The opposite case: one text node in the design, matched by its own pattern.
       expect(translate('Хугацаа: 1 цаг')).toBe('Duration: 1 h');

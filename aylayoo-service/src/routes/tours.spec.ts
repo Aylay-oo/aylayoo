@@ -19,7 +19,7 @@ import type { Env } from '../types';
  */
 
 const log = console.log;
-console.log = () => {};
+console.log = () => undefined;
 const { default: app } = await import('../index');
 afterAll(() => { console.log = log; });
 

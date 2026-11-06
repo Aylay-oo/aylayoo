@@ -6,7 +6,38 @@
  */
 
 export const I18N_EXTRA: Readonly<Record<string, string>> = {
-  /* ---- navigation the design did not have ---- */
+  /* ---- Phase 3: guide-led tours and the trip request form ----
+   * The tour cards and the tour page. Durations go through the runtime patterns in i18n.tsx
+   * ("2 цаг", "90 мин"), so only the labels need entries here. */
+  'Хөтөчтэй аялал': 'Guided tours',
+  'Аялалууд ачаалагдлаа': 'Tours loaded',
+  'Одоохондоо хөтөчтэй аялал нийтлээгүй байна.': 'No guided tours have been published yet.',
+  'Уулзах газар:': 'Meeting point:',
+  'Бусад аялал харах': 'See other tours',
+
+  /* The request form. The privacy notice's own four sentences are in PrivacyNotice.tsx and
+   * translated below; these are the fields and the two states around them. */
+  'Аяллын хүсэлт': 'Trip request',
+  'хүсэлт': 'request',
+  'Хүсэлтээ үлдээвэл манай баг хөтөчтэй холбож, тантай эргэж холбогдоно.':
+    'Leave your request and our team will contact the guide and get back to you.',
+  'Хэзээ, хэдэн хүн, юу үзэхийг хүсэж байна?':
+    'When, how many people, and what would you like to see?',
+  'Хүний тоо': 'Number of people',
+  'Хэзээнээс': 'From',
+  'Хэзээ хүртэл': 'Until',
+  'Утас, имэйлээ тайлбар дээр бичих шаардлагагүй — дээрх хүснэгтэд бичсэн нь хангалттай.':
+    'There is no need to put your phone number or email in the message — the field above is enough.',
+  'Тайлбар дээрээ утас, имэйл бичих шаардлагагүй':
+    'Please leave your phone number and email out of the message',
+  'Аяллын талаар бүтэн өгүүлбэр бичнэ үү': 'Please write a sentence or two about the trip',
+  /* "The team", not "the guide": in R1a an admin relays the request by hand, and a
+   * confirmation implying the guide already has it would be a promise we cannot keep. */
+  'Манай баг хөтөчтэй холбож, тантай эргэж холбогдоно.':
+    'Our team will contact the guide and get back to you.',
+  'Хүсэлтийн дугаар': 'Request reference',
+  'Энэ дугаараа хадгалаарай. Мэдээллээ устгуулах бол бидэнд энэ дугаараа хэлнэ.':
+    'Please keep this reference. You will need it to ask us to delete your details.',
   'Үндсэн агуулга руу шилжих': 'Skip to main content',
 
   /* ---- hero headline ----

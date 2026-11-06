@@ -377,11 +377,41 @@ export const guideConsentRevokeSchema = z.object({
  *
  * Deliberately a little eager: `+976 7000 0001` and `seven double-oh` are not the same problem,
  * and the first is the one that happens. Requiring seven digits rather than eight means a
- * spaced or dashed number still trips it, at the cost of occasionally refusing a long party
- * count — which the message tells them how to fix.
+ * spaced or dashed number still trips it, at the cost of refusing an unseparated seven-digit
+ * figure — a budget written `1500000` rather than `1,500,000`. Dates are the one false
+ * positive common enough to be worth excluding outright; see withoutDates below.
  */
 const EMAIL_SHAPED = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 const PHONE_SHAPED = /(?:\+?\d[\s-]*){7,}/;
+
+/* A calendar date is seven or more digits separated by dashes, so "we arrive on 2026-07-14"
+ * trips PHONE_SHAPED — and the refusal it produces tells the traveller to remove a phone
+ * number they never wrote. That is the worst kind of validation error: correct by its own
+ * rule, and impossible to act on.
+ *
+ * So plausible dates come out of the text before the phone test runs. "Plausible" is doing
+ * real work here: it needs a four-digit year between 1900 and 2200, a month of 1–12 and a day
+ * of 1–31, which is what keeps `99-11-2233` from being read as a date and waved through. A
+ * number written the way people actually write one — `9911-2233`, `9911 2233`, `+976 9911
+ * 2233` — has at most one separator in the middle and never matches this at all.
+ */
+const DATE_SHAPED = /\b(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})\b/g;
+
+function withoutDates(text: string): string {
+  return text.replace(DATE_SHAPED, (match, first: string, middle: string, last: string) => {
+    const yearFirst = first.length === 4;
+    const year = Number(yearFirst ? first : last);
+    const day = Number(yearFirst ? last : first);
+    const month = Number(middle);
+
+    const plausible = (yearFirst || last.length === 4)
+      && year >= 1900 && year <= 2200
+      && month >= 1 && month <= 12
+      && day >= 1 && day <= 31;
+
+    return plausible ? ' ' : match;
+  });
+}
 
 export const CONTACT_IN_MESSAGE =
   'Please leave your phone number and email out of the message — the form asks for them '
@@ -389,7 +419,7 @@ export const CONTACT_IN_MESSAGE =
 
 /** True when free text appears to contain a way to contact somebody. */
 export const looksLikeContact = (text: string): boolean =>
-  EMAIL_SHAPED.test(text) || PHONE_SHAPED.test(text);
+  EMAIL_SHAPED.test(text) || PHONE_SHAPED.test(withoutDates(text));
 
 const tripMessage = z
   .string()
