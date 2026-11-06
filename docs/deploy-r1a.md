@@ -1,7 +1,10 @@
 # Deploying R1a — guide-led tours and trip requests
 
-**Nothing here has been run.** Every command is for you to run; I have not touched production,
-and no step below has been executed.
+> **EXECUTED 2026-11-06. R1a is live.** This is now a record of what was run, not a plan.
+> Live versions: web `daf23ac7-c20c-4df1-9623-3baad8ef9b7a`, service
+> `07823b9a-eac2-43a3-8f4c-7aa5f6dc53ba`. Retention cron registered: `17 3 * * *`.
+> Results are recorded at each step; §9's rollback limits still apply and have changed meaning
+> now that the service has shipped — read §9 before rolling anything back.
 
 R1a is five commits on top of `feat/aylayoo-phase2` (`922b65a`, which is what is live) — the
 four below plus the retention and privacy-notice fixes. **The fixes add no migration**: the
@@ -63,6 +66,10 @@ ls -lh backups/pre-0004-0005.sql     # must be non-empty before you go on
 Keep the most recent two, delete the rest, and delete all of them 90 days after this migration
 has succeeded.
 
+**Run 2026-11-06:** 91 KB, 15 tables, 205 inserts, gitignore confirmed. `city_tours` and
+`trip_requests` were absent from the dump, which independently confirmed `0004`/`0005` had not
+been applied. **`backups/` now holds 5 files — trim to the two most recent.**
+
 ## 2. Confirm exactly two migrations are pending
 
 ```bash
@@ -76,6 +83,10 @@ between this branch and production, and applying blind would be guessing.
 Both are additive: `0004` creates `city_tours` and `guide_consent`, `0005` creates
 `trip_requests` plus its unique index on `reference`. No `ALTER`, no `DROP`, nothing that
 touches an existing row. That is why there is no database rollback — see §7.
+
+**Run 2026-11-06:** exactly those two were listed, nothing else. Applied cleanly; the follow-up
+list returned "No migrations to apply!" and the three new tables came back empty with the 51
+existing guides untouched.
 
 ## 3. Apply them
 
@@ -99,6 +110,21 @@ cd ../aylayoo-web            && bunx wrangler deployments list      # web: note 
 Write both down. A rollback target chosen after something has gone wrong is chosen under
 pressure. See §7 for the two rules that constrain what you may roll back to.
 
+**Recorded 2026-11-06, immediately before this deploy:**
+
+| app | rollback target (the version live before R1a) |
+|---|---|
+| service `aylayoo-service` | `fe6a8ba8-dc83-4ba7-8643-466669571e0a` (2026-11-05T03:16:58Z) |
+| web `aylayoo-web` | `0cf42df7-84a6-42d7-aaa8-6461e7fc1ba6` (2026-11-05T03:01:06Z) |
+
+The service id satisfies both absolute rules: it is newer than the privacy fix
+`f8fe1632-34a3-4e08-bca0-454d2c9312a3` (2026-11-02T11:16:51Z), and the two forbidden ids
+`a9250cb4` (2026-11-02T03:05) and `c5a88a88` (2026-11-02T10:46) are both older than that fix.
+
+**The web id is from `feat/aylayoo-phase2`, so it predates `a0a9200`.** Before the service
+deploy it is safe. After it, rolling the web back to this id is the `rating !== null` crash this
+whole ordering exists to avoid — roll the **service** back first, then the web.
+
 ## 5. Deploy the web
 
 ```bash
@@ -120,6 +146,12 @@ built bundle itself rather than trusting the tab:
 ```bash
 grep -rl "localhost:4003" .open-next/assets/_next/static/ | head   # expect no output
 ```
+
+**Run 2026-11-06:** 0 matches in the assets and 0 in `.open-next/worker.js`; 5 files carried the
+live API host. One wrinkle worth recording: in the local preview a server-rendered page
+(`/guides/:id`) returns **500** unless a local `aylayoo-service` is also running, because those
+reads go through the `API` service binding and the binding has no target otherwise. With the
+service up it was 200. That 500 is a preview artefact, not a defect.
 
 Then:
 
@@ -152,6 +184,12 @@ If a guide card is blank or the console shows a TypeError, **stop and roll the w
 id from step 4; something about the rating read is wrong and the service deploy would make it
 worse.
 
+**Run 2026-11-06 — passed.** Server-side: all pages 200, zero `localhost:4003` across the page
+and all 13 served chunks, no crash markers, no contact fields, 0 tour URLs in the sitemap. The
+old API was still sending `rating: null` at that point, which is exactly the shape this window
+tests. Confirmed in a browser by the owner: guide cards rendered with no stars, no console
+TypeError, and the Хөтөчтэй аялал tab showed its retry notice.
+
 ## 7. Deploy the service
 
 ```bash
@@ -176,9 +214,21 @@ first run logging `contacts_cleared=0 requests_deleted=0` is the expected result
 If the cron never appears, the data still has an owner: the manual procedure in
 `aylayoo-service/README.md`, owned by S. Bolorsaikhan.
 
+**Run 2026-11-06:** 146 tests passed, deployed as `07823b9a-eac2-43a3-8f4c-7aa5f6dc53ba`. The
+`wrangler deploy` output itself printed `schedule: 17 3 * * *`, so the trigger registered with
+the deploy; `wrangler triggers deploy` confirmed the same (it warns that it is experimental).
+Still worth confirming once in the dashboard under **Settings → Trigger Events**.
+
 ## 8. Production checks
 
 Read-only, and none of them print personal data.
+
+**Run 2026-11-06 — all passed.** `/api/city/tours` → `{"data":[]}`; `/api/city/tours/1` → 404.
+Zero `phone` / `email` / `fullName` / `createdAt` / `rating` / `reviewCount` across all 50
+guides. All four admin routes → 401. An unaddressed trip request → 400. CORS echoed
+`https://aylayoo.com` and refused `https://evil.example`. Web: all pages 200, zero
+`localhost:4003` across 13 chunks, 142 sitemap URLs with 0 tour and 0 admin entries, existing
+API data intact (22 aimags, 6 must-see places). **No production records were created.**
 
 ```bash
 API=https://aylayoo-service.sbolorsaikhan4.workers.dev

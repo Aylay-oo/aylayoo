@@ -1,6 +1,6 @@
 # Where aylayoo stands
 
-Last updated 2026-11-06. Read this first, then the READMEs. This repo is **public** — never add
+Last updated 2026-11-06 (R1a deployed). Read this first, then the READMEs. This repo is **public** — never add
 passwords, tokens, hashes, real guest or guide data, or anything from `private/` or `backups/`.
 
 ## The phases
@@ -9,18 +9,33 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
 |---|---|---|
 | **1** | The public site: home, aimags, places, guides, detail pages, SEO, sitemap | **Live** on https://aylayoo.com |
 | **2** | The Ulaanbaatar city section (`/ulaanbaatar`) — itineraries, walking routes, food, practical guide, phrasebook, events — all editable from `/admin` | **Live.** Food and events ship deliberately **empty**; the rest is drafted, unpublished |
-| **3** | Guide-led tours, trip requests, verified reviews, saved plans | **In progress.** R1a is built and tested, **not deployed** |
+| **3** | Guide-led tours, trip requests, verified reviews, saved plans | **R1a is live** (2026-11-06). R1b, R2 and R3 not started |
 
 ## Right now
 
-- Branch **`feat/aylayoo-phase3`**, branched from
-  `feat/aylayoo-phase2` (`922b65a`) — which is what is **live**. Latest commit: this one.
-- **Nothing in Phase 3 is deployed.** Waiting: tours and consent (`0cc3cd2`), the review floor
-  (`a0a9200`), trip requests (`9e40fca`), the web UI (`e178edb`), the deploy plan (`1390c1e`),
-  and the pre-deploy fixes below.
-- Migrations **`0004`** and **`0005`** are applied locally and **pending on production**. The
-  fixes below add **no migration** — the retention passes only touch columns `0005` creates.
+- Branch **`feat/aylayoo-phase3`**, branched from `feat/aylayoo-phase2` (`922b65a`).
+  **R1a shipped from this branch on 2026-11-06** — it is what is live. Not merged to `main`.
+- Migrations **`0004`** and **`0005`** are **applied on production**; nothing is pending. The
+  retention work needed no migration — it only touches columns `0005` already creates.
+- The daily **retention Cron Trigger is registered**: `17 3 * * *`, confirmed in the deploy
+  output (`schedule: 17 3 * * *`).
 - 146 service tests, 662 web tests, typecheck and lint all green.
+
+### What is live, and the version ids
+
+| | version | deployed |
+|---|---|---|
+| web `aylayoo-web` | `daf23ac7-c20c-4df1-9623-3baad8ef9b7a` | 2026-11-06 11:55 UTC |
+| service `aylayoo-service` | `07823b9a-eac2-43a3-8f4c-7aa5f6dc53ba` | 2026-11-06 ~12:0x UTC |
+
+Deployed **web first, then service** — see the ordering section below. The gap between the two
+was inspected while it was open: the new web rendered guide cards against the old API with no
+stars and no TypeError, which is the failure that ordering exists to prevent.
+
+**R1a is live but has no reachable new surface yet.** No guide consent is recorded and no tour is
+published, so `/api/city/tours` returns `{"data":[]}` and the Хөтөчтэй аялал tab shows its empty
+state. That is the consent gate working, not a fault — but it means nothing in R1a is visible to
+a visitor until somebody records consent and publishes a tour.
 
 ### Fixed before deploying, after a pre-deploy review
 
@@ -55,13 +70,24 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
 
 ## The next single task
 
-**Deploy R1a**, following [`deploy-r1a.md`](./deploy-r1a.md) step by step. **You run every
-production command yourself** — the assistant does not deploy, use `--remote`, or read
-production.
+**Record `tours` consent for one real guide who has actually agreed, then publish their tour** —
+that is what turns R1a from deployed into usable. Consent is a commitment made on somebody's
+behalf: do not record it until that guide has agreed, and put how it was obtained in the
+evidence note.
 
-R1a is the first of four stages. **Not in scope until it is live:** saved plans (R1b), the
-guide portal (R2), reviews (R3), email or SMS. Never in scope: the SAT and goal-tracker apps
-elsewhere in this monorepo.
+R1a was the first of four stages. **Still not in scope:** saved plans (R1b), the guide portal
+(R2), reviews (R3), email or SMS. Never in scope: the SAT and goal-tracker apps elsewhere in
+this monorepo.
+
+### Known gap found in the post-deploy reachability audit
+
+A trip request naming **a guide instead of a tour** is fully supported by the API
+(`tripRequestSchema` takes one of the two; `routes/trips.ts` has the guide branch with its own
+approval and `requests`-consent checks; service tests cover it) but **no screen ever sends one**.
+`TripRequestDialog` is mounted only on the tour page; guide cards and `/guides/:id` still open
+the Phase 1/2 `ContactDialog`, which posts to `/api/contact`. Consequence worth knowing:
+recording `requests` consent for a guide has no user-visible effect unless that guide also has a
+published tour.
 
 ## Tours are not in the CRUD factory
 
@@ -84,18 +110,36 @@ asking: **does either side tolerate the other being older?**
 
 ## Versions and rollback
 
-The live version ids are **not recorded here**: reading them is a production read, which the
-assistant does not do. Get them with `bunx wrangler deployments list` in each app and write
-them into the deploy plan *before* deploying.
+Live ids are in the table above. The versions that were live **before** R1a, and so are the
+rollback targets for it:
+
+| | roll back to | note |
+|---|---|---|
+| service | `fe6a8ba8-dc83-4ba7-8643-466669571e0a` | the pre-R1a service |
+| web | `0cf42df7-84a6-42d7-aaa8-6461e7fc1ba6` | the pre-R1a web. `388cf3b0` is one generation older still |
 
 **The service must never be rolled back to `a9250cb4` or `c5a88a88`, and never past
 `f8fe1632-34a3-4e08-bca0-454d2c9312a3`.** Everything older serves guides' phone numbers and
 emails publicly — incident 2, live about a month. Prove it after any rollback:
-`curl -s "$API/api/guides?limit=50" | grep -c '"phone"'` must be 0. The database never rolls
-back; migrations are additive.
+`curl -s "$API/api/guides?limit=50" | grep -c '"phone"'` must be 0.
+
+**The web rollback is now the constrained one.** Both `0cf42df7` and `388cf3b0` were built from
+`feat/aylayoo-phase2`, which tests `rating !== null` — and the service now omits that key, so
+rolling the web back alone reintroduces the `undefined.toFixed()` crash on every guide card. To
+undo the web after this release: **roll the service back first, then the web.**
+
+The database never rolls back; `0004` and `0005` only create tables, and dropping them would
+destroy any trip request a real person has sent.
 
 ## Standing rules
 
+- **Every new user-facing feature must be reachable from the home page.** If a visitor who
+  lands on `/` cannot get to it by following links, it does not count as shipped — a feature
+  nobody can navigate to is indistinguishable from one that was never deployed, and it will not
+  be found by the people it was built for. State the click path when you call a feature done.
+  This covers the public site only: `/admin` is deliberately unlinked (see the consent note
+  below), and an entry point still has to respect the content gates — a tour nobody has
+  published is correctly invisible.
 - **Ask before any `--remote` command or any deploy.** The owner runs them.
 - **Never run `seed/seed.sql` against `--remote`** — it starts by deleting every row.
 - **Only touch `apps/aylayoo`.** Leave the SAT and goal-tracker changes alone.
