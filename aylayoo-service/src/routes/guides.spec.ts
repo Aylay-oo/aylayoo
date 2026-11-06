@@ -19,7 +19,7 @@ import type { Env } from '../types';
 
 const log = console.log;
 console.log = () => undefined;
-const { default: app } = await import('../index');
+const { app } = await import('../index');
 afterAll(() => { console.log = log; });
 
 const JWT_SECRET = 'test-secret-not-used-anywhere-else';

@@ -117,9 +117,20 @@ export const getCityRoutes = async () =>
 /* Guide-led tours. `getCityTour` is what /ulaanbaatar/tours/[id] renders from, and
  * `getCityTours` is for the sitemap.
  *
- * Both return published tours whose guide is approved and consenting — the service inner-joins
- * on that, so a tour withdrawn because consent was revoked disappears from the sitemap on the
- * next crawl rather than lingering as a 404 a crawler keeps asking for. */
+ * Both return tours that are `published` and whose guide is `approved`. The service inner-joins
+ * on the guide's status — and on NOTHING else: it does not join `guide_consent`, so this is not
+ * the place consent is enforced.
+ *
+ * Consent is enforced on the way IN, not on the way out. A tour cannot reach `published`
+ * without its guide's active `tours` consent (routes/admin-tours.ts refuses the transition on
+ * both the create and the update path), and revoking that consent sets the guide's published
+ * tours back to `draft` in the same D1 batch as the revocation. So a withdrawn tour is gone from
+ * this response because it is no longer published — which is also why it leaves the sitemap on
+ * the next crawl rather than lingering as a 404 a crawler keeps asking for.
+ *
+ * The distinction matters: this comment used to claim the query filtered on consent. Somebody
+ * reading that would reasonably conclude the public read was the safety net, and might then
+ * "simplify" the admin-side gate that actually is one. */
 export const getCityTour = (id: number) => one<CityTour>(`/api/city/tours/${id}`);
 
 export const getCityTours = async () =>

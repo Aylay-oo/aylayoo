@@ -16,9 +16,42 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
 - Branch **`feat/aylayoo-phase3`**, branched from
   `feat/aylayoo-phase2` (`922b65a`) — which is what is **live**. Latest commit: this one.
 - **Nothing in Phase 3 is deployed.** Waiting: tours and consent (`0cc3cd2`), the review floor
-  (`a0a9200`), trip requests (`9e40fca`), the web UI (`e178edb`), the deploy plan (`1390c1e`).
-- Migrations **`0004`** and **`0005`** are applied locally and **pending on production**.
-- 123 service tests, 661 web tests, typecheck and lint all green.
+  (`a0a9200`), trip requests (`9e40fca`), the web UI (`e178edb`), the deploy plan (`1390c1e`),
+  and the pre-deploy fixes below.
+- Migrations **`0004`** and **`0005`** are applied locally and **pending on production**. The
+  fixes below add **no migration** — the retention passes only touch columns `0005` creates.
+- 146 service tests, 662 web tests, typecheck and lint all green.
+
+### Fixed before deploying, after a pre-deploy review
+
+- **Retention is implemented, not promised.** `aylayoo-service/src/lib/retention.ts` clears
+  contact details 90 days after the later of the last trip day and the closure (with creation as
+  a floor), deletes whole requests at 24 months, and stamps `contact_cleared_at`. A daily **Cron
+  Trigger** (03:17 UTC) runs it from the `scheduled` handler in `src/index.ts`. Previously the
+  privacy notice promised both dates and nothing enforced either: the "cleanup pass" the schema
+  referred to did not exist, and the procedure the docs pointed at was not in the README.
+  **No review token is required while reviews do not exist** — read the other way, the rule
+  would have blocked every clearing forever. Owner for the manual fallback: **S. Bolorsaikhan**,
+  in `aylayoo-service/README.md`.
+- **The privacy notice now says the same thing in both languages**, and matches the code term
+  for term. The two sides had drifted: one named a single date, the other "whichever is later".
+  The deletion line names both halves erasure actually needs — the reference *and* the contact
+  used — and the address to send them to.
+- **Revoking consent is atomic.** The revocation and the unpublishing of that guide's tours are
+  one D1 batch. As two statements, a failure in between left consent revoked with the tours
+  still public, and a retry answered 404 because the handler only matches un-revoked rows.
+- **Two gaps in the tests closed:** the per-guide daily cap (20 requests/day) had none, and the
+  test harness's `batch()` claimed to be atomic while running its statements outside the
+  transaction it opened.
+- Corrected a comment in `aylayoo-web/src/lib/api-server.ts` claiming the public tours query
+  filters on consent. It does not, and it does not need to — consent is enforced on the way in.
+
+### Still open
+
+- All 50 production guides have **no aimag assigned**, so a tour's guide cannot be filtered by
+  region.
+- `invocation_logs: false` is unconfirmed in the Cloudflare dashboard.
+- Email and SMS are unresolved, and R2 cannot be estimated until they are — see the plan's §11.
 
 ## The next single task
 
@@ -30,13 +63,24 @@ R1a is the first of four stages. **Not in scope until it is live:** saved plans 
 guide portal (R2), reviews (R3), email or SMS. Never in scope: the SAT and goal-tracker apps
 elsewhere in this monorepo.
 
+## Tours are not in the CRUD factory
+
+`registerCityCrud` serves the six Phase 2 city resources. Guide-led tours have their own
+handlers in `routes/admin-tours.ts`, because a tour names a real person and makes a commitment
+on their behalf: its create *and* update paths must refuse a publish without the guide's active
+`tours` consent, which the generic factory knows nothing about. Bolting the check on after the
+factory would have left it on the easy path and absent from the one somebody adds next. The plan
+originally said tours would reuse the factory; the code is right and the plan has been corrected.
+
 ## Deploy order for R1a: **web first, then service**
 
 Not the usual order. The new API omits `rating` and `reviewCount` for guides below three
 published reviews, and every production guide is below it. The live web tests `rating !== null`
-— true for a missing key — so it would call `.toFixed()` on undefined and crash every guide
-card. The web fix (`!= null`) works against both API versions, so it goes first. Decide the
-order every release by asking: **does either side tolerate the other being older?**
+— true for a missing key — so it would call `.toFixed()` on undefined. There are **two** such
+sites on the deployed branch, `GuideCard.tsx` and `InfoCard.tsx`, so the crash would reach the
+home page's guide section, every aimag page and every `/guides/:id`. Both are fixed. The web fix
+(`!= null`) works against both API versions, so it goes first. Decide the order every release by
+asking: **does either side tolerate the other being older?**
 
 ## Versions and rollback
 
@@ -78,9 +122,11 @@ The plan lives at `~/.claude/plans/breezy-knitting-dewdrop.md`. What matters fro
   Never backfill `guides.rating`; R3's reviews are its only legitimate source.
 - **Traveller contact reaches a guide only after they accept**, enforced by the API withholding
   the fields rather than by trusting a screen to hide them.
-- **Retention:** contact cleared 90 days after the later of the trip dates and closure, never
-  before a required review token is delivered; requests deleted at 24 months; saved plans at 12
-  months unviewed. **Manual** until a Cron Trigger exists — see `aylayoo-service/README.md`.
+- **Retention:** contact cleared 90 days after the later of the trip dates and closure (floor:
+  creation), never before a *required* review token is delivered — **and none is required until
+  R3**, because nothing delivers one before then. Requests deleted at 24 months; saved plans at
+  12 months unviewed. **Automated** by a daily Cron Trigger as of R1a, with an owned manual
+  fallback in `aylayoo-service/README.md`.
 - **Erasure is not self-service:** reference *and* the contact used, both confirmed by an
   admin, then deleted. The lookup never says which half was wrong.
 - **"Verified" means "verified request"**, never "verified purchase" — nothing is paid for here.

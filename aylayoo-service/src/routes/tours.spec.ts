@@ -20,7 +20,7 @@ import type { Env } from '../types';
 
 const log = console.log;
 console.log = () => undefined;
-const { default: app } = await import('../index');
+const { app } = await import('../index');
 afterAll(() => { console.log = log; });
 
 const JWT_SECRET = 'test-secret-not-used-anywhere-else';
@@ -188,6 +188,40 @@ describe('publishing a tour requires recorded consent', () => {
 
     const open = await (await call('/api/city/tours')).json() as { data: unknown[] };
     expect(open.data).toHaveLength(0);
+  });
+
+  test('if the unpublish fails, the revoke is rolled back with it', async () => {
+    /* The two writes are one D1 batch, and this is the test that proves it.
+     *
+     * Renaming city_tours away makes the second statement in the batch fail with "no such
+     * table". What must NOT happen is the first one sticking: consent revoked while the
+     * guide's tours stay published is the site continuing to make a commitment on behalf of
+     * somebody who just withdrew it — and because the handler only matches consent rows with
+     * `revokedAt IS NULL`, a retry would answer 404 and leave no way back through this
+     * endpoint. Either both writes land or neither does. */
+    const consent = await recordConsent();
+    await createTour({ status: 'published' });
+
+    await env.DB.prepare('ALTER TABLE city_tours RENAME TO city_tours_moved').run();
+
+    const response = await call(`/api/admin/guide-consent/${consent.id}/revoke`, {
+      method: 'POST',
+      headers: { ...json, ...(await auth()) },
+      body: JSON.stringify({ reason: 'Invented withdrawal for this test' }),
+    });
+
+    expect(response.status).toBe(500);
+
+    // Put it back, then confirm the consent is still active and the tour still published.
+    await env.DB.prepare('ALTER TABLE city_tours_moved RENAME TO city_tours').run();
+
+    const rows = await (await call('/api/admin/guide-consent?guideId=1', { headers: await auth() }))
+      .json() as { data: { revokedAt: unknown }[] };
+    expect(rows.data).toHaveLength(1);
+    expect(rows.data[0].revokedAt).toBeNull();
+
+    const open = await (await call('/api/city/tours')).json() as { data: unknown[] };
+    expect(open.data).toHaveLength(1);
   });
 
   test('a revoked consent is history, not a deletion', async () => {

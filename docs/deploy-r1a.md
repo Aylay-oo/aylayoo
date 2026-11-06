@@ -1,9 +1,12 @@
 # Deploying R1a — guide-led tours and trip requests
 
 **Nothing here has been run.** Every command is for you to run; I have not touched production,
-and no step below has been executed. Written against `feat/aylayoo-phase3` at `e178edb`.
+and no step below has been executed.
 
-R1a is four commits on top of `feat/aylayoo-phase2` (`922b65a`, which is what is live):
+R1a is five commits on top of `feat/aylayoo-phase2` (`922b65a`, which is what is live) — the
+four below plus the retention and privacy-notice fixes. **The fixes add no migration**: the
+retention passes only read and write columns `0005` already creates, so step 2's expectation of
+exactly two pending migrations is unchanged.
 
 | commit | what |
 |---|---|
@@ -11,6 +14,7 @@ R1a is four commits on top of `feat/aylayoo-phase2` (`922b65a`, which is what is
 | `a0a9200` | the review floor — **and the web fix that makes this release web-first** |
 | `9e40fca` | `trip_requests`, migration `0005`, the relay and the erasure lookup |
 | `e178edb` | the web UI: tour pages, the request form, the admin screens |
+| *(this one)* | the retention cron, the atomic consent revoke, the aligned privacy notice |
 
 ---
 
@@ -26,16 +30,20 @@ guide's row comes back without those two keys.
 The live web was built from `feat/aylayoo-phase2`, which tests `guide.rating !== null`.
 `undefined !== null` is **true**, so that branch runs and calls `undefined.toFixed(1)`.
 
+**There are two such sites on the deployed branch, not one:**
+
 ```
-$ git log --oneline feat/aylayoo-phase2 -1 -S"guide.rating != null" -- .../GuideCard.tsx
-   (no output — the fix is not on the deployed branch)
+$ git show feat/aylayoo-phase2:.../components/GuideCard.tsx | grep -n "rating !== null"
+121:        {guide.rating !== null ? (
+$ git show feat/aylayoo-phase2:.../components/InfoCard.tsx  | grep -n "rating !== null"
+165:            {guide.rating !== null && (
 ```
 
 So service-first would throw on every guide card on the live site: the home page's guide
-section, each aimag page, every `/guides/:id`. Web-first costs nothing by comparison — the new
-tours tab calls `/api/city/tours`, which the old service answers 404, and the tab shows its
-"could not load, retry" state. A broken new tab for a few minutes, against a crash on pages
-that work today.
+section, each aimag page, every `/guides/:id`. Both are `!= null` on this branch, as are the two
+new tour components. Web-first costs nothing by comparison — the new tours tab calls
+`/api/city/tours`, which the old service answers 404, and the tab shows its "could not load,
+retry" state. A broken new tab for a few minutes, against a crash on pages that work today.
 
 **Both directions must be checked, and step 6 checks them**: the new web has to work against
 the old API *and* the new one, because it is live against the old one for the length of the
@@ -95,11 +103,25 @@ pressure. See §7 for the two rules that constrain what you may roll back to.
 
 ```bash
 cd apps/aylayoo/aylayoo-web
-bunx nx run aylayoo-web:preview     # optional, but it is the only way to see what will ship
+NX_LOAD_DOT_ENV_FILES=false bunx nx run aylayoo-web:preview
 ```
 
-In the preview, confirm the page loads and the network tab shows requests going to
-`aylayoo-service.sbolorsaikhan4.workers.dev` — **not** `localhost:4003`. Then:
+**Not optional.** It is the only way to see what Cloudflare will actually serve, and the one
+failure it catches has happened: a `.env` file on the machine put `http://localhost:4003` into a
+production bundle. `NX_LOAD_DOT_ENV_FILES=false` is what stops Nx loading those files into the
+build's environment — the `preview` target keeps the overridable form of the URL on purpose, so
+without this a local `.env.development.local` wins.
+
+The preview serves on `http://localhost:8787` and binds to localhost only, so it is a desktop
+check, not a phone one. Confirm the page loads, the network tab shows requests going to
+`aylayoo-service.sbolorsaikhan4.workers.dev` — **not** `localhost:4003` — and then check the
+built bundle itself rather than trusting the tab:
+
+```bash
+grep -rl "localhost:4003" .open-next/assets/_next/static/ | head   # expect no output
+```
+
+Then:
 
 ```bash
 bunx nx run aylayoo-web:deploy      # runs lint, then builds with the API URL pinned, then deploys
@@ -134,10 +156,25 @@ worse.
 
 ```bash
 cd apps/aylayoo/aylayoo-service
-bun test            # 123 tests, all passing, before you ship
+bun test            # 146 tests, all passing, before you ship
 bunx wrangler deploy
 bunx wrangler deployments list    # confirm a NEW version id, and record it
 ```
+
+**This deploy also registers the retention Cron Trigger**, and it is the only thing that does:
+`triggers.crons` in `wrangler.jsonc` changes nothing until a deploy, and
+`wrangler deployments list` does **not** show triggers, so a missing cron would look exactly
+like a successful release. Confirm it:
+
+```bash
+bunx wrangler triggers deploy     # idempotent; re-registers the crons from wrangler.jsonc
+```
+
+Then check the Worker's **Settings → Trigger Events** in the dashboard shows `17 3 * * *`. The
+first run is the next 03:17 UTC; nothing is due to be cleared for 90 days anyway, so an empty
+first run logging `contacts_cleared=0 requests_deleted=0` is the expected result, not a failure.
+If the cron never appears, the data still has an owner: the manual procedure in
+`aylayoo-service/README.md`, owned by S. Bolorsaikhan.
 
 ## 8. Production checks
 
@@ -167,6 +204,26 @@ curl -s -o /dev/null -w "%{http_code}\n" "$API/api/admin/guide-consent"   # expe
 # A trip request with no guide and no tour is refused, so the endpoint is not an open inbox.
 curl -s -o /dev/null -w "%{http_code}\n" -X POST "$API/api/trips/requests" \
   -H 'Content-Type: application/json' -d '{"travellerName":"x","message":"y"}'   # expect 400
+
+# CORS still answers the real front end, and still refuses anything else.
+curl -s -D- -o /dev/null "$API/api/guides?limit=1" -H 'Origin: https://aylayoo.com' \
+  | grep -i '^access-control-allow-origin'        # expect: https://aylayoo.com
+curl -s -D- -o /dev/null "$API/api/guides?limit=1" -H 'Origin: https://evil.example' \
+  | grep -ic '^access-control-allow-origin'       # expect 0
+```
+
+And on the web app itself:
+
+```bash
+# No served chunk points at a local API. The page HTML is not enough — the URL is inlined into
+# the JS, which is exactly where the localhost regression hid last time.
+for u in $(curl -s https://aylayoo.com/ | grep -o '/_next/static/[^"]*\.js' | sort -u); do
+  curl -s "https://aylayoo.com$u"
+done | grep -c "localhost:4003"                   # expect 0
+
+# The sitemap lists no draft or withdrawn tour. It is built from the same published-only
+# endpoint, so a draft appearing here means the status filter is not holding.
+curl -s https://aylayoo.com/sitemap.xml | grep -c "/ulaanbaatar/tours/"   # expect 0 until a tour is published
 ```
 
 Then in a browser:
@@ -174,6 +231,8 @@ Then in a browser:
 - [ ] `https://aylayoo.com/ulaanbaatar` → the tours tab now shows its empty state
       ("Одоохондоо хөтөчтэй аялал нийтлээгүй байна."), not an error
 - [ ] guide cards still render everywhere, now with the keys genuinely absent
+- [ ] the privacy notice on the request form reads correctly in **both** languages, and the
+      deletion line names the reference, the contact used, and the team's address
 - [ ] `/admin` → the two new tabs load, tours is empty, requests is empty
 - [ ] `/admin` → create a draft tour for an approved guide and confirm **Нийтлэх is disabled**
       with the missing-consent reason shown. Leave it as a draft, or delete it.
@@ -182,6 +241,12 @@ Then in a browser:
 **Do not record consent for a real guide until that guide has actually agreed**, and put how it
 was obtained in the evidence note. The consent screen is the point at which this stops being a
 deployment and starts being a commitment on somebody's behalf.
+
+**Create no test records in production.** A draft tour named "test" is a row somebody has to
+remember to delete, and a test trip request is a fake person in a table whose whole design is
+about handling real ones — it would also start a 24-month retention clock on invented data. The
+empty states above are the check; the behaviour itself is covered by 146 service tests locally.
+Everything in §8 is a read.
 
 ## 9. Rollback targets, and the one thing a rollback must never undo
 
@@ -223,9 +288,15 @@ there for a mistake, not for an undo.
 ## 10. After it is live
 
 - Record the two new version ids in `docs/STATUS.md`.
-- `trip_requests` now holds personal data, and the retention passes are **manual** until the
-  Cron Trigger exists. The owner and the exact statements are in
-  `aylayoo-service/README.md`; it is a weekly task, and an unowned one is how data outlives its
-  retention period.
-- Delete `backups/pre-0004-0005.sql` 90 days from the migration, keeping at most the two most
-  recent backups in the meantime.
+- `trip_requests` now holds personal data, and the retention passes run **daily at 03:17 UTC**
+  from the Cron Trigger registered by step 7. Confirm the trigger is listed in the dashboard
+  before closing this out — a release that silently shipped without it looks identical to one
+  that worked, and nothing would be due for 90 days, so the gap would not surface on its own.
+- **The cron does not cover `backups/`.** A `d1 export` is a local file holding every contact
+  detail in the database, so it stays part of the owned weekly task in
+  `aylayoo-service/README.md` (S. Bolorsaikhan): keep the two most recent, delete the rest, and
+  delete `backups/pre-0004-0005.sql` 90 days from this migration.
+- The first clearing is not due until 90 days after the first real request's trip dates or
+  closure, so there is nothing to verify in the data today. What is verifiable today is that the
+  trigger exists and the handler runs — check the Worker's **Logs** after the first 03:17 UTC
+  for a line reading `contacts_cleared=0 requests_deleted=0`.

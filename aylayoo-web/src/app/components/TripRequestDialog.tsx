@@ -230,7 +230,7 @@ export function TripRequestDialog({ open, onClose, tourId, tourTitle, guideId }:
             <b>{formatReference(reference ?? '')}</b>
           </p>
           <p className="admin-muted">
-            {t('Энэ дугаараа хадгалаарай. Мэдээллээ устгуулах бол бидэнд энэ дугаараа хэлнэ.')}
+            {t('Энэ лавлах кодоо хадгалаарай. Мэдээллээ устгуулахад шаардлагатай.')}
           </p>
 
           {/* Repeated after submitting, now naming the reference they hold — the deletion line

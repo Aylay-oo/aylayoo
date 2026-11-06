@@ -63,13 +63,26 @@ class ShimD1 {
     return new ShimStatement(this.db, sql);
   }
 
-  /** Atomic, like the real thing — the reorder handler depends on all-or-nothing. */
+  /* Atomic, like the real thing — and it has to be genuinely atomic, because the consent
+   * revoke in routes/admin-tours.ts depends on all-or-nothing and tours.spec.ts asserts the
+   * rollback by making the second statement fail.
+   *
+   * This used to build a transaction around `() => undefined`, run that empty function, and
+   * then execute every statement OUTSIDE it — so `batch` was advertised as atomic while being
+   * nothing of the kind, and a rollback test against it would have passed for the wrong
+   * reason. Explicit BEGIN/COMMIT/ROLLBACK instead, which survives the `await`s that a
+   * bun:sqlite `transaction()` callback cannot contain. */
   async batch(statements: ShimStatement[]): Promise<D1Result[]> {
-    const results: D1Result[] = [];
-    const run = this.db.transaction(() => undefined);
-    run();
-    for (const statement of statements) results.push(await statement.run());
-    return results;
+    this.db.exec('BEGIN');
+    try {
+      const results: D1Result[] = [];
+      for (const statement of statements) results.push(await statement.run());
+      this.db.exec('COMMIT');
+      return results;
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
   }
 
   async exec(sql: string) {

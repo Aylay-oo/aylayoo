@@ -2,6 +2,7 @@
 
 import { useDialogs } from '../../lib/dialogs';
 import { useLang } from '../../lib/i18n';
+import { TEAM_EMAIL } from '../../lib/seo';
 import { useTravelState } from '../../lib/travel-state';
 
 export function Footer() {
@@ -49,7 +50,7 @@ export function Footer() {
                   {t('Хөтчөөр бүртгүүлэх')}
                 </button>
               </li>
-              <li><a href="mailto:ayalyoo123@gmail.com">ayalyoo123@gmail.com</a></li>
+              <li><a href={`mailto:${TEAM_EMAIL}`}>{TEAM_EMAIL}</a></li>
               <li>{t('Улаанбаатар, Монгол Улс')}</li>
             </ul>
           </div>

@@ -67,9 +67,13 @@ export function translate(s: string): string {
   if ((m = s.match(/^(\d+)\/(\d+) зогсоол зураг дээр$/)))
     return `${m[1]} of ${m[2]} stops on the map`;
   /* The privacy notice's deletion line, which names the traveller's own reference. A runtime
-   * pattern rather than a dictionary entry, because the reference is different every time. */
-  if ((m = s.match(/^Устгуулахыг хүсвэл (.+) дугаараа хэлж бидэнтэй холбогдоно уу\.$/)))
-    return `To have it deleted, contact us quoting reference ${m[1]}.`;
+   * pattern rather than a dictionary entry, because the reference is different every time.
+   *
+   * It names both halves, matching the dictionary entry for the version shown before the
+   * reference exists: erasure needs the reference AND the contact used, and an admin matches
+   * them by hand. Anchored at both ends so it cannot swallow a neighbouring sentence. */
+  if ((m = s.match(/^Устгуулахыг хүсвэл (.+) лавлах код болон ашигласан холбоо барих мэдээллээ бичиж бидэнтэй холбогдоно уу\.$/)))
+    return `To have it deleted, write to us with reference code ${m[1]} and the contact details you used.`;
   /* A tour's duration, standing on its own rather than after "Хугацаа:" — the tour cards and
    * the tour page show it as a bare badge. All three are anchored at both ends, which is what
    * keeps them from overlapping: an unanchored hours pattern would match "1 цаг 30 мин" and

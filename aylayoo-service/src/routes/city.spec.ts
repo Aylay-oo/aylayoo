@@ -27,7 +27,7 @@ const JWT_SECRET = 'test-secret-not-used-anywhere-else';
  * index.ts is being evaluated — so a beforeAll would be too late. */
 const log = console.log;
 console.log = () => undefined;
-const { default: app } = await import('../index');
+const { app } = await import('../index');
 afterAll(() => { console.log = log; });
 
 beforeEach(() => {

@@ -264,6 +264,78 @@ that file before adding a `console.*` call anywhere in this service. The rules:
 strings, Mongolian phone numbers, long digit runs, bearer tokens and JWTs are replaced by
 placeholders. `src/lib/logging.spec.ts` pins all of it, using invented values.
 
+## Data retention — the Cron Trigger, and the manual fallback
+
+**Owner: S. Bolorsaikhan.** This section is the backstop for a cron that has stopped running,
+and an unowned retention task is how data outlives the period it was promised.
+
+The privacy notice on the trip request form makes two dated promises to the traveller, in both
+languages. They are the reason this exists:
+
+| promise | what enforces it |
+|---|---|
+| contact details deleted **90 days** after whichever is later — the last day of the trip (`preferred_to`) or the day the request was closed (`closed_at`) | `clearExpiredContacts()` in `src/lib/retention.ts` |
+| the whole request deleted after **24 months** | `deleteExpiredRequests()` in the same file |
+
+Both run daily at **03:17 UTC** from the `scheduled` handler in `src/index.ts`, declared as
+`triggers.crons` in `wrangler.jsonc`. The handler logs **counts only** — naming the rows would
+write the data into a retained log at the moment we promised to delete it.
+
+### What the rule actually is
+
+- The 90-day clock starts at the **later** of the end of the `preferred_to` day and `closed_at`,
+  with `created_at` as a floor. The floor matters: dates are optional on the form and a request
+  can sit open forever, so without it a phone number would wait for the 24-month delete.
+- **No review token is required while reviews do not exist.** `review_token_delivered_at` is
+  null on every row in R1a because nothing generates or delivers a token until R3, so treating
+  it as a precondition would stop the pass clearing anything at all and make the 90-day promise
+  false for everybody. `REVIEW_TOKEN_BLOCKS_CLEARING` in `src/lib/retention.ts` is `false`, and
+  it flips to `true` in the same change that starts delivering tokens — from then on a
+  `completed` request waits for its token, and `declined`/`cancelled` never do.
+- Both passes are **idempotent**, which is what makes the manual catch-up below safe.
+- `src/lib/retention.spec.ts` pins every boundary on both sides — a second early and exactly on
+  time — so an off-by-one fails here rather than in somebody's retained phone number.
+
+### Checking the cron is actually registered
+
+A Cron Trigger is only created by a `wrangler deploy`; editing `wrangler.jsonc` alone changes
+nothing, and `wrangler deployments list` does **not** show triggers.
+
+```bash
+bunx wrangler triggers deploy          # re-registers the crons from wrangler.jsonc
+```
+
+Otherwise confirm it in the dashboard under the Worker's **Settings → Trigger Events**, and see
+the run history under **Logs**. A missed day costs nothing — the next run clears the same rows.
+
+### The manual fallback
+
+Weekly, and whenever the cron has not run. Read-only check first, so you know what will go:
+
+```bash
+cd apps/aylayoo/aylayoo-service
+
+# How many rows each pass WOULD touch. Counts only — this prints no personal data.
+bunx wrangler d1 execute aylayoo-db --remote --command "SELECT COUNT(*) AS contacts_to_clear FROM trip_requests WHERE contact_cleared_at IS NULL AND (email IS NOT NULL OR phone IS NOT NULL) AND MAX(created_at, COALESCE(closed_at,0), COALESCE(unixepoch(preferred_to)+86400,0)) <= unixepoch() - 90*86400"
+bunx wrangler d1 execute aylayoo-db --remote --command "SELECT COUNT(*) AS requests_to_delete FROM trip_requests WHERE unixepoch(datetime(created_at,'unixepoch','+24 months')) <= unixepoch()"
+```
+
+Then the two passes, in this order — clear first, so a row deleted at 24 months was counted as
+cleared too:
+
+```bash
+bunx wrangler d1 execute aylayoo-db --remote --command "UPDATE trip_requests SET email = NULL, phone = NULL, contact_cleared_at = unixepoch() WHERE contact_cleared_at IS NULL AND (email IS NOT NULL OR phone IS NOT NULL) AND MAX(created_at, COALESCE(closed_at,0), COALESCE(unixepoch(preferred_to)+86400,0)) <= unixepoch() - 90*86400"
+bunx wrangler d1 execute aylayoo-db --remote --command "DELETE FROM trip_requests WHERE unixepoch(datetime(created_at,'unixepoch','+24 months')) <= unixepoch()"
+```
+
+These are the same two statements the scheduled handler runs, written out so they can be run
+without deploying anything. Take a `d1 export` backup first if you are running the delete by
+hand for the first time — and remember `backups/` holds real contact details: keep the two most
+recent, delete the rest, and delete all of them 90 days after the migration they were taken for.
+
+**`backups/` is not covered by the cron.** It is a local file on a laptop, so it belongs to this
+same owned weekly task.
+
 ## Step 9 — Deploy to Cloudflare
 
 ```bash

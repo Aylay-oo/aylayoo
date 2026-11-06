@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { getDb } from './db/client';
 import { errorSummary, logLine } from './lib/logging';
+import { runRetention } from './lib/retention';
 import { adminRoutes } from './routes/admin';
 import { aimagRoutes } from './routes/aimags';
 import { cityRoutesApi } from './routes/city';
@@ -11,9 +13,11 @@ import { guideRoutes } from './routes/guides';
 import { placeRoutes } from './routes/places';
 import { tourRoutes } from './routes/tours';
 import { tripRoutes } from './routes/trips';
-import type { AppEnv } from './types';
+import type { AppEnv, Env } from './types';
 
-const app = new Hono<AppEnv>();
+/* Exported by name as well as inside the default handler below, because the specs drive it
+ * directly with `app.request(path, init, env)` and the default export is no longer the app. */
+export const app = new Hono<AppEnv>();
 
 /* The custom print function matters: hono's default writes the path *with* its query string.
  * See lib/logging.ts for what these logs may and may not contain. */
@@ -72,4 +76,30 @@ app.onError((err, c) => {
   return c.json({ error: 'Something went wrong' }, 500);
 });
 
-export default app;
+/* The default export is a handler object rather than the Hono app, because this Worker now has
+ * a second entry point: the daily Cron Trigger declared in wrangler.jsonc.
+ *
+ * `scheduled` logs counts and nothing else. The rows it touches are the ones holding travellers'
+ * phone numbers and email addresses, so naming them here would write the data into a retained
+ * log at the moment we promised to delete it — see lib/logging.ts and lib/retention.ts.
+ *
+ * A throw inside `scheduled` is caught and logged rather than left to propagate: an unhandled
+ * rejection is reported by Cloudflare as a failed invocation with no detail of our own, and the
+ * passes are idempotent, so the right response to a failure is a recorded error and another
+ * attempt tomorrow. If the cron stops running altogether, the manual procedure in README.md is
+ * the backstop and S. Bolorsaikhan owns it.
+ */
+export default {
+  fetch: app.fetch,
+
+  async scheduled(event: ScheduledController, env: Env, _ctx: ExecutionContext) {
+    try {
+      const { contactsCleared, requestsDeleted } = await runRetention(getDb(env.DB));
+      console.log(
+        `retention cron=${event.cron} contacts_cleared=${contactsCleared} requests_deleted=${requestsDeleted}`,
+      );
+    } catch (err) {
+      console.error(`retention failed: ${errorSummary(err)}`);
+    }
+  },
+};

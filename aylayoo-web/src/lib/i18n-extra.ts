@@ -36,8 +36,10 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
   'Манай баг хөтөчтэй холбож, тантай эргэж холбогдоно.':
     'Our team will contact the guide and get back to you.',
   'Хүсэлтийн дугаар': 'Request reference',
-  'Энэ дугаараа хадгалаарай. Мэдээллээ устгуулах бол бидэнд энэ дугаараа хэлнэ.':
-    'Please keep this reference. You will need it to ask us to delete your details.',
+  /* Just "keep it" — the full rule (reference AND the contact used) is in the privacy notice
+   * directly below this line, and saying half of it twice is how the two drift apart. */
+  'Энэ лавлах кодоо хадгалаарай. Мэдээллээ устгуулахад шаардлагатай.':
+    'Please keep this reference code. You will need it to ask us to delete your details.',
   'Үндсэн агуулга руу шилжих': 'Skip to main content',
 
   /* ---- hero headline ----
@@ -284,18 +286,22 @@ export const I18N_EXTRA: Readonly<Record<string, string>> = {
    * On the form itself rather than behind a link. Every claim here is enforced in
    * aylayoo-service — see the header of PrivacyNotice.tsx for which test holds which one. */
   'Таны мэдээллийн талаар': 'About your information',
-  'Бидэнд: таны нэр, холбоо барих хаяг, хүсэлтийн тайлбар, хүний тоо, хүссэн өдрүүд.':
-    'We collect: your name, your contact details, what you wrote, how many of you there are, and your preferred dates.',
+  /* The two sides are kept sentence for sentence, not paraphrased. They drifted once: the
+   * Mongolian said the contact was deleted "90 хоногийн дараа" counted from one thing and the
+   * English said "whichever is later" of two, so the same notice promised two different dates
+   * depending on which language a traveller read. Each entry below says the same thing in both. */
+  'Бид таны нэр, холбоо барих мэдээлэл, хүсэлтийн тайлбар, хүний тоо, хүссэн өдрүүдийг авна.':
+    'We collect your name, your contact details, what you wrote in your request, how many of you there are, and your preferred dates.',
   'Бидэнд: таны сонгосон нэр, үнэлгээ, сэтгэгдэл.':
     'We collect: the name you choose to show, your rating and your review.',
-  'Үүнийг манай баг харна. Хөтөч таны нэр, тайлбар, өдрүүдийг хүсэлтийг хүлээн авахаас нь өмнө, холбоо барих хаягийг зөвхөн хүлээн авсны дараа харна.':
-    'Our team sees this. The guide sees your name, your message and your dates before they accept — your contact details only once they have.',
+  'Эдгээрийг манай баг харна. Хөтөч таны нэр, тайлбар, өдрүүдийг хүсэлтийг хүлээн авахаас өмнө, харин холбоо барих мэдээллийг зөвхөн хүлээн авсны дараа харна.':
+    'Our team sees this. The guide sees your name, your message and your dates before they accept the request, and your contact details only after they have accepted.',
   'Сэтгэгдлийг манай баг уншиж, нийтлэхээс өмнө шалгана. Нийтлэгдсэний дараа сонгосон нэр, үнэлгээ, сэтгэгдэл нь олон нийтэд харагдана.':
     'Our team reads every review before it is published. Once published, the name you chose, your rating and your review are public.',
-  'Холбоо барих хаягийг аяллын өдрөөс эсвэл хүсэлт хаагдсанаас 90 хоногийн дараа устгана. Хүсэлтийг 24 сарын дараа бүрэн устгана.':
-    'Your contact details are deleted 90 days after your trip dates, or after the request is closed — whichever is later. The whole request is deleted after 24 months.',
+  'Холбоо барих мэдээллийг аяллын сүүлийн өдөр эсвэл хүсэлт хаагдсан өдрийн аль хожуу нь болсноос хойш 90 хоногийн дараа устгана. Хүсэлтийг 24 сарын дараа бүрэн устгана.':
+    'Your contact details are deleted 90 days after whichever is later: the last day of your trip, or the day the request was closed. The whole request is deleted after 24 months.',
   'Нийтэлсэн сэтгэгдлийг хугацаагүй хадгална. Сэтгэгдэлд холбоо барих хаяг байдаггүй.':
     'A published review is kept indefinitely. A review never holds contact details.',
-  'Устгуулахыг хүсвэл хүсэлт илгээсний дараа гарах дугаараа хэлж бидэнтэй холбогдоно уу.':
-    'To have it deleted, contact us with the reference you are given after sending this.',
+  'Устгуулахыг хүсвэл хүсэлт илгээсний дараа өгөх лавлах код болон ашигласан холбоо барих мэдээллээ бичиж бидэнтэй холбогдоно уу.':
+    'To have it deleted, write to us with the reference code you are given after sending this request, and the contact details you used.',
 };

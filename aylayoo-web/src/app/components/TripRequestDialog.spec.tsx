@@ -76,7 +76,7 @@ describe('the privacy notice', () => {
   it('is there in English too', () => {
     show('en');
     expect(screen.getByText('About your information')).toBeTruthy();
-    expect(screen.getByText(/90 days after your trip dates/i)).toBeTruthy();
+    expect(screen.getByText(/90 days after whichever is later/i)).toBeTruthy();
   });
 });
 
@@ -216,7 +216,7 @@ describe('the confirmation', () => {
     fill();
     submit();
 
-    expect(await screen.findByText(/R7K2-9QMX-4TBV дугаараа хэлж/)).toBeTruthy();
+    expect(await screen.findByText(/R7K2-9QMX-4TBV лавлах код/)).toBeTruthy();
   });
 
   it('keeps the form and the message when the API refuses', async () => {

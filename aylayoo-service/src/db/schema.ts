@@ -478,8 +478,12 @@ export const tripRequests = sqliteTable('trip_requests', {
    *
    * The clock is 90 days after the LATER of preferredTo and closedAt, not 90 days after
    * creation: a trip booked four months ahead would otherwise have its contact details deleted
-   * before the trip. And never before a required review token has been delivered — see
-   * reviewTokenDeliveredAt. Set by the cleanup pass; null means the contact is still held. */
+   * before the trip. `createdAt` is a floor, so a request with no dates that is never closed is
+   * still cleared rather than held forever.
+   *
+   * Set by the cleanup pass in `src/lib/retention.ts`, which the daily Cron Trigger in
+   * wrangler.jsonc runs; null means the contact is still held. The pass is idempotent, so the
+   * manual catch-up documented in README.md is safe to run at any time. */
   contactClearedAt: integer('contact_cleared_at', { mode: 'timestamp' }),
 
   /* R3's review token, hashed. Declared now because the retention rule above depends on
@@ -488,7 +492,14 @@ export const tripRequests = sqliteTable('trip_requests', {
    *
    * Hashed, never plaintext: a d1 export must not hand out a capability. */
   reviewTokenHash: text('review_token_hash'),
-  /** Null means the traveller has not been sent their review link, which BLOCKS the clearing. */
+  /* Null means the traveller has not been sent their review link.
+   *
+   * In R3 this BLOCKS the contact clearing for a `completed` request, because clearing first
+   * would make the review link undeliverable. It does NOT block anything today: nothing
+   * generates or delivers a token before R3, so no token is *required* yet and
+   * `REVIEW_TOKEN_BLOCKS_CLEARING` in lib/retention.ts is false. Read the rule the other way
+   * and this column, null on every row forever, would stop the pass clearing anything at all —
+   * and the 90-day sentence on the trip request form would be false for every traveller. */
   reviewTokenDeliveredAt: integer('review_token_delivered_at', { mode: 'timestamp' }),
   reviewTokenUsedAt: integer('review_token_used_at', { mode: 'timestamp' }),
 });

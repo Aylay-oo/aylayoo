@@ -13,6 +13,15 @@ export const SITE_URL = 'https://aylayoo.com';
 /** The brand, as it appears after the page's own name in a <title>. */
 export const SITE_NAME = 'АЯЛЪЯ ӨӨ';
 
+/* The address a traveller reaches the team on, and the only one.
+ *
+ * Here rather than inline because two places now depend on it being the same address: the
+ * footer's contact list, and the privacy notice's deletion line — where it is not decoration
+ * but the mechanism. Erasure is not self-service (it needs an admin to match the reference
+ * against the contact used), so a notice that promises deletion without saying where to ask
+ * promises nothing. Two copies of an address is how one of them goes stale. */
+export const TEAM_EMAIL = 'ayalyoo123@gmail.com';
+
 /* Share cards are built from public/images by scripts/build-og-images.mjs, cropped to Open
  * Graph's 1.905:1 — see that file for why the raw photos cannot be used directly. The key is a
  * photo key from src/lib/photos.ts, so a place's card is a crop of the very photo on its card. */

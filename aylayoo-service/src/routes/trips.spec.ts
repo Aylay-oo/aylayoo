@@ -22,7 +22,7 @@ import type { Env } from '../types';
 
 const log = console.log;
 console.log = () => undefined;
-const { default: app } = await import('../index');
+const { app } = await import('../index');
 afterAll(() => { console.log = log; });
 
 const JWT_SECRET = 'test-secret-not-used-anywhere-else';
@@ -236,6 +236,63 @@ describe('submitting a request', () => {
 
     expect(codes.filter((c) => c === 201)).toHaveLength(5);
     expect(codes.filter((c) => c === 429)).toHaveLength(2);
+  });
+
+  /* The per-guide daily cap.
+   *
+   * Seeded straight into the table rather than submitted, for two reasons: the per-IP limit
+   * above would refuse the 6th request long before the 20th, and the cap is counted from the
+   * stored rows anyway — that is the point of it. It holds across many IPs and across a KV
+   * outage, because what it protects is a property of the table and not of a counter.
+   */
+  const seedRequestsFor = async (guideId: number, howMany: number) => {
+    for (let i = 0; i < howMany; i += 1) {
+      await env.DB
+        .prepare(`INSERT INTO trip_requests (reference, traveller_name, message, guide_id)
+                  VALUES (?, 'Test Traveller', 'An invented request, seeded by these tests.', ?)`)
+        .bind(`TESTCAP${String(i).padStart(4, '0')}`, guideId)
+        .run();
+    }
+  };
+
+  test('the per-guide daily cap refuses the 21st request for one guide', async () => {
+    await consent();
+    await seedRequestsFor(1, 20);
+
+    const response = await submit();
+
+    expect(response.status).toBe(429);
+    // So a client knows this is worth retrying, and roughly when.
+    expect(response.headers.get('Retry-After')).toBe('3600');
+  });
+
+  test('the 20th is still accepted — the cap is not off by one', async () => {
+    await consent();
+    await seedRequestsFor(1, 19);
+
+    expect((await submit()).status).toBe(201);
+  });
+
+  test('the cap is per guide, so one flooded guide does not close the others', async () => {
+    await consent();
+    await seedGuide(env.DB, 2);
+    await consent('requests', 2);
+    await seedRequestsFor(1, 20);
+
+    // Guide 1 is at the cap; guide 2 is untouched by it.
+    expect((await submit()).status).toBe(429);
+    expect((await submit({ guideId: 2 })).status).toBe(201);
+  });
+
+  test('requests older than a day do not count towards the cap', async () => {
+    /* The window is 24 hours, so yesterday's flood must not keep a guide closed today. */
+    await consent();
+    await seedRequestsFor(1, 20);
+    await env.DB
+      .prepare("UPDATE trip_requests SET created_at = unixepoch() - 60 * 60 * 25 WHERE guide_id = 1")
+      .run();
+
+    expect((await submit()).status).toBe(201);
   });
 });
 

@@ -38,6 +38,25 @@
     { "binding": "RATE_LIMIT", "id": "033f8078ce1c43eebbdc9cd9186442f1" }
   ],
 
+  /* The retention passes on trip_requests, run daily by src/index.ts's `scheduled` handler.
+   *
+   * This exists because the privacy notice on the trip request form promises the traveller two
+   * dates — contact details cleared 90 days after the trip or the closure, the whole request
+   * gone at 24 months — and until this cron those were promises nothing kept. See
+   * src/lib/retention.ts for the rule and README.md for the manual procedure that covers a
+   * cron that has stopped running.
+   *
+   * 03:17 UTC: off the hour, because every cron on the platform fires on the hour and the
+   * minute past is where the contention is. Daily rather than hourly — the boundaries are days
+   * and months, so an hourly pass would do the same work 23 extra times.
+   *
+   * A Cron Trigger is only registered by a `wrangler deploy`. Adding it here changes nothing
+   * until the service is deployed, and `wrangler deployments list` does not show it — check
+   * the Worker's Settings → Trigger Events in the dashboard, or `wrangler triggers deploy`. */
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+
   /* Workers Logs — retained and queryable in the dashboard, rather than `wrangler tail`'s
    * live-only view.
    *

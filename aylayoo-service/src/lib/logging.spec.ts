@@ -111,7 +111,7 @@ describe('the app as wired up', () => {
     const real = console.log;
     console.log = (...args: unknown[]) => { lines.push(args.map(String).join(' ')); };
     try {
-      const { default: app } = await import('../index');
+      const { app } = await import('../index');
       await app.request(
         `/api/guides?aimag=khuvsgul&language=en&email=${FAKE_EMAIL}`,
         undefined,

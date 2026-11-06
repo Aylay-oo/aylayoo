@@ -243,21 +243,35 @@ adminTourRoutes.post('/guide-consent/:id{[0-9]+}/revoke', async (c) => {
     ? `${consent.evidenceNote} — revoked: ${body.data.reason}`
     : consent.evidenceNote;
 
-  await db
+  const revoke = db
     .update(guideConsent)
     .set({ revokedAt: new Date(), evidenceNote: note })
     .where(eq(guideConsent.id, id));
 
-  /* Withdrawing `tours` consent takes the tours down with it. Other scopes do not touch them. */
-  let unpublished = 0;
-  if (consent.scope === 'tours') {
-    const rows = await db
+  /* Withdrawing `tours` consent takes the tours down with it. Other scopes do not touch them.
+   *
+   * ONE BATCH, so the two writes cannot come apart. Run as two separate statements, a failure
+   * between them left consent revoked while the guide's tours stayed published — the site still
+   * making a commitment on behalf of somebody who had just withdrawn it — and the obvious retry
+   * made it worse, not better: the handler only matches consent rows with `revokedAt IS NULL`,
+   * so the second attempt answered 404 and there was no way back through this endpoint at all.
+   * D1's batch is a single transaction, so either the consent is revoked and the tours are down,
+   * or nothing happened and the retry works. */
+  if (consent.scope !== 'tours') {
+    await revoke;
+    return c.json({ data: { id, scope: consent.scope, toursUnpublished: 0 } });
+  }
+
+  const [, unpublishedRows] = await db.batch([
+    revoke,
+    db
       .update(cityTours)
       .set({ status: 'draft' })
       .where(and(eq(cityTours.guideId, consent.guideId), eq(cityTours.status, 'published')))
-      .returning({ id: cityTours.id });
-    unpublished = rows.length;
-  }
+      .returning({ id: cityTours.id }),
+  ]);
 
-  return c.json({ data: { id, scope: consent.scope, toursUnpublished: unpublished } });
+  return c.json({
+    data: { id, scope: consent.scope, toursUnpublished: unpublishedRows.length },
+  });
 });
