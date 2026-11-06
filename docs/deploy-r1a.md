@@ -1,0 +1,231 @@
+# Deploying R1a — guide-led tours and trip requests
+
+**Nothing here has been run.** Every command is for you to run; I have not touched production,
+and no step below has been executed. Written against `feat/aylayoo-phase3` at `e178edb`.
+
+R1a is four commits on top of `feat/aylayoo-phase2` (`922b65a`, which is what is live):
+
+| commit | what |
+|---|---|
+| `0cc3cd2` | `city_tours` + `guide_consent`, migration `0004`, the consent gate |
+| `a0a9200` | the review floor — **and the web fix that makes this release web-first** |
+| `9e40fca` | `trip_requests`, migration `0005`, the relay and the erasure lookup |
+| `e178edb` | the web UI: tour pages, the request form, the admin screens |
+
+---
+
+## Why the web goes first
+
+Normally the service ships first, because the web is the one that needs the new endpoints. Not
+this time, and the reason is verifiable rather than a matter of taste:
+
+`a0a9200` makes the API **omit** `rating` and `reviewCount` for any guide below three published
+reviews. Production guides all have `review_count` NULL, so after the service deploy **every**
+guide's row comes back without those two keys.
+
+The live web was built from `feat/aylayoo-phase2`, which tests `guide.rating !== null`.
+`undefined !== null` is **true**, so that branch runs and calls `undefined.toFixed(1)`.
+
+```
+$ git log --oneline feat/aylayoo-phase2 -1 -S"guide.rating != null" -- .../GuideCard.tsx
+   (no output — the fix is not on the deployed branch)
+```
+
+So service-first would throw on every guide card on the live site: the home page's guide
+section, each aimag page, every `/guides/:id`. Web-first costs nothing by comparison — the new
+tours tab calls `/api/city/tours`, which the old service answers 404, and the tab shows its
+"could not load, retry" state. A broken new tab for a few minutes, against a crash on pages
+that work today.
+
+**Both directions must be checked, and step 6 checks them**: the new web has to work against
+the old API *and* the new one, because it is live against the old one for the length of the
+gap between the two deploys.
+
+---
+
+## 1. Back up production D1
+
+```bash
+cd apps/aylayoo/aylayoo-service
+bunx wrangler d1 export aylayoo-db --remote --output=backups/pre-0004-0005.sql
+ls -lh backups/pre-0004-0005.sql     # must be non-empty before you go on
+```
+
+`backups/` is gitignored and this file is a complete copy of every guide's contact details.
+Keep the most recent two, delete the rest, and delete all of them 90 days after this migration
+has succeeded.
+
+## 2. Confirm exactly two migrations are pending
+
+```bash
+bunx wrangler d1 migrations list aylayoo-db --remote
+```
+
+**Expected output: `0004_youthful_onslaught.sql` and `0005_easy_silk_fever.sql`, and nothing
+else.** If a third appears, or either of these is missing, **stop** — something is out of step
+between this branch and production, and applying blind would be guessing.
+
+Both are additive: `0004` creates `city_tours` and `guide_consent`, `0005` creates
+`trip_requests` plus its unique index on `reference`. No `ALTER`, no `DROP`, nothing that
+touches an existing row. That is why there is no database rollback — see §7.
+
+## 3. Apply them
+
+```bash
+bunx wrangler d1 migrations apply aylayoo-db --remote
+bunx wrangler d1 migrations list aylayoo-db --remote     # expect "No migrations to apply"
+```
+
+If this fails part way, **stop and do not deploy either Worker.** Re-run step 2 and report what
+is pending; a half-applied pair is the one state worth stopping on.
+
+Never run `seed/seed.sql` against `--remote`. It begins by deleting every row.
+
+## 4. Write down both rollback targets, before deploying anything
+
+```bash
+cd apps/aylayoo/aylayoo-service && bunx wrangler deployments list   # service: note the current version id
+cd ../aylayoo-web            && bunx wrangler deployments list      # web: note the current version id
+```
+
+Write both down. A rollback target chosen after something has gone wrong is chosen under
+pressure. See §7 for the two rules that constrain what you may roll back to.
+
+## 5. Deploy the web
+
+```bash
+cd apps/aylayoo/aylayoo-web
+bunx nx run aylayoo-web:preview     # optional, but it is the only way to see what will ship
+```
+
+In the preview, confirm the page loads and the network tab shows requests going to
+`aylayoo-service.sbolorsaikhan4.workers.dev` — **not** `localhost:4003`. Then:
+
+```bash
+bunx nx run aylayoo-web:deploy      # runs lint, then builds with the API URL pinned, then deploys
+bunx wrangler deployments list      # confirm a NEW version id, and record it
+```
+
+The deploy target pins `NEXT_PUBLIC_API_URL` inline for the reason written in its own comment:
+a `.env` file on the machine once shipped a production bundle pointing at localhost.
+
+## 6. Check the live web against the OLD API — before the service deploy
+
+This is the window the order creates, so it is the window to inspect.
+
+```bash
+curl -s https://aylayoo.com/ | grep -c "localhost:4003"        # expect 0
+```
+
+In a browser, on `https://aylayoo.com`:
+
+- [ ] the home page's guide cards render, with no star rating (the old API sends `rating: null`,
+      the new web reads `!= null`, so it draws nothing rather than crashing)
+- [ ] an aimag page and a `/guides/:id` page both render
+- [ ] `/ulaanbaatar` loads, and the new **Хөтөчтэй аялал** tab shows the retry notice rather
+      than a blank panel or a stack trace — the endpoint does not exist yet
+- [ ] no uncaught errors in the console on any of those pages
+
+If a guide card is blank or the console shows a TypeError, **stop and roll the web back** to the
+id from step 4; something about the rating read is wrong and the service deploy would make it
+worse.
+
+## 7. Deploy the service
+
+```bash
+cd apps/aylayoo/aylayoo-service
+bun test            # 123 tests, all passing, before you ship
+bunx wrangler deploy
+bunx wrangler deployments list    # confirm a NEW version id, and record it
+```
+
+## 8. Production checks
+
+Read-only, and none of them print personal data.
+
+```bash
+API=https://aylayoo-service.sbolorsaikhan4.workers.dev
+
+# The new endpoints exist and are empty — nothing is published until consent is recorded.
+curl -s "$API/api/city/tours" | head -c 200          # expect {"data":[]}
+curl -s "$API/api/city/tours/1"                      # expect 404
+
+# The allow-list still holds on the endpoints that were exposed before. Expect 0 for all three.
+curl -s "$API/api/guides?limit=50" | grep -c '"phone"'
+curl -s "$API/api/guides?limit=50" | grep -c '"email"'
+curl -s "$API/api/guides?limit=50" | grep -c '"fullName"'
+
+# The review floor: production guides have review_count NULL, so both keys must be ABSENT.
+curl -s "$API/api/guides?limit=50" | grep -c '"rating"'        # expect 0
+curl -s "$API/api/guides?limit=50" | grep -c '"reviewCount"'   # expect 0
+
+# The relay is admin-only.
+curl -s -o /dev/null -w "%{http_code}\n" "$API/api/admin/trip-requests"   # expect 401
+curl -s -o /dev/null -w "%{http_code}\n" "$API/api/admin/tours"           # expect 401
+curl -s -o /dev/null -w "%{http_code}\n" "$API/api/admin/guide-consent"   # expect 401
+
+# A trip request with no guide and no tour is refused, so the endpoint is not an open inbox.
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$API/api/trips/requests" \
+  -H 'Content-Type: application/json' -d '{"travellerName":"x","message":"y"}'   # expect 400
+```
+
+Then in a browser:
+
+- [ ] `https://aylayoo.com/ulaanbaatar` → the tours tab now shows its empty state
+      ("Одоохондоо хөтөчтэй аялал нийтлээгүй байна."), not an error
+- [ ] guide cards still render everywhere, now with the keys genuinely absent
+- [ ] `/admin` → the two new tabs load, tours is empty, requests is empty
+- [ ] `/admin` → create a draft tour for an approved guide and confirm **Нийтлэх is disabled**
+      with the missing-consent reason shown. Leave it as a draft, or delete it.
+- [ ] on a phone, open the tours tab and a tour page, and check nothing scrolls sideways
+
+**Do not record consent for a real guide until that guide has actually agreed**, and put how it
+was obtained in the evidence note. The consent screen is the point at which this stops being a
+deployment and starts being a commitment on somebody's behalf.
+
+## 9. Rollback targets, and the one thing a rollback must never undo
+
+**The service.** Roll back to the id recorded in step 4.
+
+Two absolute rules, both from incident 2 in [`incidents.md`](./incidents.md):
+
+- **Never** roll the service back to `a9250cb4` or `c5a88a88`. Both predate the guide
+  allow-list and both serve guides' phone numbers and email addresses publicly.
+- **Never** roll back past `f8fe1632-34a3-4e08-bca0-454d2c9312a3`, which is the first version
+  containing the fix (`1d73a6b`). Anything older reopens a month-long exposure.
+
+The step-4 id satisfies both, because it is the version live today and today's version is newer
+than the fix. The rule is written down for the case where somebody reaches further back under
+pressure.
+
+**Prove it, rather than trusting the id.** After any service rollback:
+
+```bash
+curl -s "$API/api/guides?limit=50" | grep -c '"phone"'   # must be 0
+curl -s "$API/api/guides?limit=50" | grep -c '"email"'   # must be 0
+```
+
+Non-zero means you have rolled back too far. Roll forward immediately — the exposure is live
+again from that moment, and it is the kind that cannot be proven either way afterwards, because
+there are no request logs for the original window.
+
+**The web, and the asymmetry that matters.** Before the service deploy, the web can be rolled
+back freely. **After** it, the web must **not** be rolled back past `a0a9200`: the older bundle
+tests `rating !== null` against an API that now omits the key, which is the crash this whole
+ordering exists to avoid. If you need to undo the web after the service has shipped, roll the
+**service** back first, then the web.
+
+**The database is never rolled back.** `0004` and `0005` only create tables. Dropping them
+would destroy any trip request already received — somebody's actual enquiry — and leaving them
+in place costs nothing, because the old service never looks at them. The backup from step 1 is
+there for a mistake, not for an undo.
+
+## 10. After it is live
+
+- Record the two new version ids in `docs/STATUS.md`.
+- `trip_requests` now holds personal data, and the retention passes are **manual** until the
+  Cron Trigger exists. The owner and the exact statements are in
+  `aylayoo-service/README.md`; it is a weekly task, and an unowned one is how data outlives its
+  retention period.
+- Delete `backups/pre-0004-0005.sql` 90 days from the migration, keeping at most the two most
+  recent backups in the meantime.
