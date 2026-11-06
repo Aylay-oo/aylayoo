@@ -19,8 +19,15 @@ export const SITE_NAME = 'АЯЛЪЯ ӨӨ';
  * footer's contact list, and the privacy notice's deletion line — where it is not decoration
  * but the mechanism. Erasure is not self-service (it needs an admin to match the reference
  * against the contact used), so a notice that promises deletion without saying where to ask
- * promises nothing. Two copies of an address is how one of them goes stale. */
-export const TEAM_EMAIL = 'ayalyoo123@gmail.com';
+ * promises nothing. Two copies of an address is how one of them goes stale.
+ *
+ * Note the spelling: **aylayoo**123, matching the brand and the domain. The transposed form
+ * "ayalyoo" appears elsewhere in this repo and is not a typo there — the old Vercel project is
+ * genuinely named `ayalyoo-web` (see the service's ALLOWED_ORIGINS), and the admin login account
+ * in the service README uses it too. Neither of those is this address. An unreachable address on
+ * the deletion line would make that promise undeliverable, and it is the one claim on the form a
+ * traveller has to be able to act on. */
+export const TEAM_EMAIL = 'aylayoo123@gmail.com';
 
 /* Share cards are built from public/images by scripts/build-og-images.mjs, cropped to Open
  * Graph's 1.905:1 — see that file for why the raw photos cannot be used directly. The key is a
