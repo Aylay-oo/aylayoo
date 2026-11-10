@@ -1,7 +1,7 @@
 # Where aylayoo stands
 
-Last updated 2026-11-10 (R1a live; home-page reachability deploy in progress). Read this first,
-then the READMEs. This repo is **public** — never add
+Last updated 2026-11-10 (R1a live; guided tours now reachable from the home page). Read this
+first, then the READMEs. This repo is **public** — never add
 passwords, tokens, hashes, real guest or guide data, or anything from `private/` or `backups/`.
 
 ## The phases
@@ -27,19 +27,21 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
 - 146 service tests, 670 web tests, typecheck and lint all green.
 - **`0f71e82` makes guided tours reachable from the home page** — a named `Хөтөчтэй аялал` link
   in `CitySection`, and `UlaanbaatarPage` opening a tab from the URL hash. Committed
-  2026-11-06, **after** that day's web deploy, so it is on the branch but **was not live**; the
-  deploy of it is the task in progress. It changes no API contract, so it ships web-only.
+  2026-11-06, **after** that day's web deploy, so it sat on the branch unshipped for four days.
+  **Deployed 2026-11-10** as `3bd57cc9`. It changed no API contract, so it shipped web-only —
+  the service was already at R1a and neither side needed the other to move.
 
 ### What is live, and the version ids
 
 | | version | deployed |
 |---|---|---|
-| web `aylayoo-web` | `daf23ac7-c20c-4df1-9623-3baad8ef9b7a` | 2026-11-06 11:55 UTC |
-| service `aylayoo-service` | `07823b9a-eac2-43a3-8f4c-7aa5f6dc53ba` | 2026-11-06 ~12:0x UTC |
+| web `aylayoo-web` | `3bd57cc9-f4f3-46d4-a0d6-c7174738e5e9` | 2026-11-10 12:02 UTC |
+| service `aylayoo-service` | `07823b9a-eac2-43a3-8f4c-7aa5f6dc53ba` | 2026-11-06 12:53 UTC |
 
-Deployed **web first, then service** — see the ordering section below. The gap between the two
-was inspected while it was open: the new web rendered guide cards against the old API with no
-stars and no TypeError, which is the failure that ordering exists to prevent.
+R1a itself was deployed **web first, then service** — see the ordering section below. The gap
+between the two was inspected while it was open: the new web rendered guide cards against the
+old API with no stars and no TypeError, which is the failure that ordering exists to prevent.
+The 2026-11-10 web deploy needed no such ordering, because it touches no API contract.
 
 **R1a has no published content yet, by design.** No guide consent is recorded and no tour is
 published, so `/api/city/tours` returns `{"data":[]}` and the Хөтөчтэй аялал tab shows its empty
@@ -48,9 +50,9 @@ a visitor until somebody records consent and publishes a tour.
 
 **Reachability was the separate gap, and it is what `0f71e82` fixes.** As first deployed, the
 only route to guided tours was to land on `/ulaanbaatar` and notice the second of seven tabs —
-the home page never named them, which fails the home-page rule below. The click path once the
-pending web deploy lands: **`/` → the city section's `Хөтөчтэй аялал` button →
-`/ulaanbaatar#tours`**, which opens the tours tab directly. An empty tab is the correct
+the home page never named them, which fails the home-page rule below. The click path, live as
+of 2026-11-10: **`/` → the city section's `Хөтөчтэй аялал` button → `/ulaanbaatar#tours`**,
+which opens the tours tab directly. An empty tab is the correct
 destination today: the link must land on the tab's own "no tours published yet" message rather
 than a blank panel, and an unknown hash must fall back to the default tab. Both are tested.
 
@@ -94,13 +96,7 @@ than a blank panel, and an unknown hash must fall back to the default tab. Both 
 
 ## The next single task
 
-**Deploy the web so `0f71e82` is live** — the home-page link is committed but production is
-still serving the build from before it. Web-only: the service is already at R1a and nothing in
-this commit touches an API contract. Rollback target is the current live web
-`daf23ac7-c20c-4df1-9623-3baad8ef9b7a`; per the rule below, the web must not go back past
-`a0a9200`, which rules out both `0cf42df7` and `388cf3b0`.
-
-**Then: record `tours` consent for one real guide who has actually agreed, and publish their
+**Record `tours` consent for one real guide who has actually agreed, and publish their
 tour** — that is what turns R1a from deployed into usable. Consent is a commitment made on
 somebody's behalf: do not record it until that guide has agreed, and put how it was obtained in
 the evidence note.
@@ -140,23 +136,26 @@ asking: **does either side tolerate the other being older?**
 
 ## Versions and rollback
 
-Live ids are in the table above. The versions that were live **before** R1a, and so are the
-rollback targets for it:
+Live ids are in the table above. The rollback targets:
 
 | | roll back to | note |
 |---|---|---|
-| service | `fe6a8ba8-dc83-4ba7-8643-466669571e0a` | the pre-R1a service |
-| web | `0cf42df7-84a6-42d7-aaa8-6461e7fc1ba6` | the pre-R1a web. `388cf3b0` is one generation older still |
+| web | `daf23ac7-c20c-4df1-9623-3baad8ef9b7a` | undoes the 2026-11-10 home-page link only. Safe to roll back on its own: it is R1a-era, so it reads `rating` as `!= null` |
+| service | `fe6a8ba8-dc83-4ba7-8643-466669571e0a` | the pre-R1a service — undoes all of R1a |
+
+**Do not reach past `daf23ac7` for the web.** `0cf42df7` and `388cf3b0` are the pre-R1a web
+builds and are no longer valid targets on their own; see the constraint below.
 
 **The service must never be rolled back to `a9250cb4` or `c5a88a88`, and never past
 `f8fe1632-34a3-4e08-bca0-454d2c9312a3`.** Everything older serves guides' phone numbers and
 emails publicly — incident 2, live about a month. Prove it after any rollback:
 `curl -s "$API/api/guides?limit=50" | grep -c '"phone"'` must be 0.
 
-**The web rollback is now the constrained one.** Both `0cf42df7` and `388cf3b0` were built from
+**The web rollback is the constrained one.** Both `0cf42df7` and `388cf3b0` were built from
 `feat/aylayoo-phase2`, which tests `rating !== null` — and the service now omits that key, so
-rolling the web back alone reintroduces the `undefined.toFixed()` crash on every guide card. To
-undo the web after this release: **roll the service back first, then the web.**
+rolling the web back **past `a0a9200`** reintroduces the `undefined.toFixed()` crash on every
+guide card. `daf23ac7` is on the safe side of that line and can be rolled back to alone. To go
+further back than it: **roll the service back first, then the web.**
 
 The database never rolls back; `0004` and `0005` only create tables, and dropping them would
 destroy any trip request a real person has sent.
