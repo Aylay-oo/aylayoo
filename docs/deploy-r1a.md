@@ -226,9 +226,21 @@ Read-only, and none of them print personal data.
 **Run 2026-11-06 — all passed.** `/api/city/tours` → `{"data":[]}`; `/api/city/tours/1` → 404.
 Zero `phone` / `email` / `fullName` / `createdAt` / `rating` / `reviewCount` across all 50
 guides. All four admin routes → 401. An unaddressed trip request → 400. CORS echoed
-`https://aylayoo.com` and refused `https://evil.example`. Web: all pages 200, zero
-`localhost:4003` across 13 chunks, 142 sitemap URLs with 0 tour and 0 admin entries, existing
-API data intact (22 aimags, 6 must-see places). **No production records were created.**
+`https://aylayoo.com` and refused `https://evil.example`. Web: all pages 200, 142 sitemap URLs
+with 0 tour and 0 admin entries, existing API data intact (22 aimags, 6 must-see places).
+**No production records were created.**
+
+**The chunk result from that day does not stand.** It was recorded as "zero `localhost:4003`
+across 13 chunks", but the loop it came from downloaded nothing under zsh and counted an empty
+stream — see incidents.md §3. It cannot be re-run, because historical asset bundles are not
+retained. Treat 2026-11-06 as unverified on this one check.
+
+**Run 2026-11-10 — chunk check re-run after the fix, and it passed for real:** 13 home-page
+chunks (779,657 bytes) and 12 `/ulaanbaatar` chunks (708,668 bytes) downloaded, **0** matches
+for `localhost:4003`, live API host present. Also re-confirmed that day: all six pages 200,
+zero `phone` / `email` / `fullName` / `createdAt` / `rating` / `reviewCount` across 51 guides,
+three admin routes → 401, `/api/city/tours` → `{"data":[]}`, 142 sitemap URLs with 0 tour and
+0 admin entries.
 
 ```bash
 API=https://aylayoo-service.sbolorsaikhan4.workers.dev
@@ -267,9 +279,37 @@ And on the web app itself:
 ```bash
 # No served chunk points at a local API. The page HTML is not enough — the URL is inlined into
 # the JS, which is exactly where the localhost regression hid last time.
-for u in $(curl -s https://aylayoo.com/ | grep -o '/_next/static/[^"]*\.js' | sort -u); do
-  curl -s "https://aylayoo.com$u"
-done | grep -c "localhost:4003"                   # expect 0
+#
+# `while IFS= read -r`, never `for u in $(...)`: zsh does not word-split an unquoted
+# expansion, so the `for` form handed every URL to curl as ONE argument, downloaded nothing,
+# and `grep -c` reported 0 — a check that passes by failing. The byte count is the guard, so
+# assert it before believing the count. See incidents.md.
+check_chunks() {
+  page="$1"
+  urls=$(curl -s "$page" | grep -o '/_next/static/[^"]*\.js' | sort -u)
+  if [ -z "$urls" ]; then
+    echo "FAIL $page: no chunk URLs in the HTML — the check did not run"
+    return 1
+  fi
+  n=$(printf '%s\n' "$urls" | grep -c .)
+  out=$(mktemp)
+  printf '%s\n' "$urls" | while IFS= read -r u; do
+    [ -z "$u" ] && continue
+    curl -sf "https://aylayoo.com$u" >> "$out" || echo "FAIL: $u did not download" >&2
+  done
+  bytes=$(wc -c < "$out" | tr -d ' ')
+  hits=$(grep -c "localhost:4003" "$out" || true)
+  rm -f "$out"
+  if [ "$bytes" -eq 0 ]; then
+    echo "FAIL $page: $n URLs found but 0 bytes downloaded — the check did not run"
+    return 1
+  fi
+  echo "$page: $n chunks, $bytes bytes, localhost:4003 hits=$hits   # expect 0"
+  [ "$hits" -eq 0 ]
+}
+
+check_chunks https://aylayoo.com/            # the home page bundle
+check_chunks https://aylayoo.com/ulaanbaatar # the city bundle — where the tours deep link lives
 
 # The sitemap lists no draft or withdrawn tour. It is built from the same published-only
 # endpoint, so a draft appearing here means the status filter is not holding.

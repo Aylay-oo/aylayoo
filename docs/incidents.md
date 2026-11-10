@@ -1,8 +1,10 @@
 # Incidents
 
-Two production incidents, both found and fixed on 2026-11-02. They are written down because
-between them they explain a dozen commits, three config pins and the service's logging setup,
-and because the second one is the kind of mistake that is easy to make again.
+Two production incidents, both found and fixed on 2026-11-02, and one near miss from
+2026-11-10. The incidents are written down because between them they explain a dozen commits,
+three config pins and the service's logging setup, and because the second one is the kind of
+mistake that is easy to make again. The near miss is written down because it is the reason the
+first incident's own check could not have caught it a second time.
 
 All times are UTC with Ulaanbaatar (+08) in brackets. No guide's name, phone number or email
 address appears in this file, or anywhere else in this repository.
@@ -112,6 +114,52 @@ subtractive list — three tests go red.
 
 **Lesson.** Allow-list what leaves, never deny-list it. The failure mode of a deny-list is
 silent, and it fails open.
+
+---
+
+## 3. Near miss: the check for incident 1 could not fail (2026-11-10)
+
+**Not a production incident.** Nothing was served wrongly. What failed was the *verification*
+written to catch incident 1 recurring.
+
+`deploy-r1a.md` §8 checked that no served JS chunk contains `localhost:4003`, like this:
+
+```bash
+for u in $(curl -s https://aylayoo.com/ | grep -o '/_next/static/[^"]*\.js' | sort -u); do
+  curl -s "https://aylayoo.com$u"
+done | grep -c "localhost:4003"                   # expect 0
+```
+
+In **bash** that works. In **zsh** — the shell on the build machine — an unquoted `$(...)`
+expansion is **not word-split**, so all 13 URLs were passed to `curl` as a single argument.
+`curl` fetched nothing, `grep -c` counted zero matches in an empty stream, and the check
+printed the expected `0`. It reported success *because* it had done nothing.
+
+Found on 2026-11-10 while running §8 after the home-page reachability deploy: the output file
+the chunks were being written into was **0 bytes**. Re-run with `while IFS= read -r`, the same
+check downloaded 779,657 bytes across the home page's 13 chunks and 708,668 across the city
+page's 12, and the real count was **0** — so the bundle was in fact clean, on that date.
+
+**What this means for 2026-11-06.** The §8 chunk result recorded that day — "zero
+`localhost:4003` across the page and all 13 served chunks" — was produced by the broken loop
+and **may have been a false pass**. It cannot be re-run: Cloudflare retains version metadata
+but not historical asset bundles, the same limit noted under *What we could not determine*. The
+`.open-next` assets check in §5 was a separate, working `grep -rl` over local files and did
+pass, and the deploy pins `NEXT_PUBLIC_API_URL` unconditionally, so there is reason to think
+the bundle was clean — but the chunk check is not the evidence for it. **Treat the 2026-11-06
+chunk result as unverified, and the 2026-11-10 one as confirmed.**
+
+**Fix.** §8 now uses `while IFS= read -r`, works under both shells, asserts the byte count
+before believing the match count, and fails loudly with "the check did not run" if it
+downloads 0 bytes or finds no chunk URLs. It also checks `/ulaanbaatar` as well as `/`, because
+each route ships its own bundle and the original only ever looked at the home page. Both
+failure paths were tested by forcing them.
+
+**Lesson.** A check that cannot fail is worse than no check, because it is reported as
+evidence. Any verification whose output is a count needs a second signal proving it actually
+looked at something — here, bytes downloaded. Ask of every check: *if the thing I am looking
+for were present, would this command notice?* And for anything written as a shell snippet in
+these docs, say which shell it was run under.
 
 ---
 

@@ -87,12 +87,13 @@ than a blank panel, and an unknown hash must fall back to the default tab. Both 
 - `invocation_logs: false` is unconfirmed in the Cloudflare dashboard, as is the retention Cron
   Trigger under **Settings → Trigger Events**. Both are dashboard-only reads.
 - Email and SMS are unresolved, and R2 cannot be estimated until they are — see the plan's §11.
-- **`aylayoo-service/backups/` holds 5 export files and the rule is to keep the two most
-  recent.** Each one is a complete copy of every guide's contact details, so the surplus is the
-  kind of thing that should not sit around. The directory is gitignored and nothing in it has
-  ever been committed. Trimming it is the owned task in `aylayoo-service/README.md`
-  (S. Bolorsaikhan); `pre-0004-0005.sql` is also due for deletion 90 days after that migration,
-  i.e. from **2027-02-04**.
+- **`aylayoo-service/backups/` is trimmed to the two the rule allows** (2026-11-10):
+  `pre-0004-0005.sql` and `pre-admin-reset.sql` kept, three older exports deleted. Each file is
+  a complete copy of every guide's contact details, so the surplus was the kind of thing that
+  should not sit around. The directory is gitignored and nothing in it has ever been committed.
+  Keeping it trimmed is the owned weekly task in `aylayoo-service/README.md`
+  (S. Bolorsaikhan); `pre-0004-0005.sql` is itself due for deletion 90 days after that
+  migration, i.e. from **2027-02-04**.
 
 ## The next single task
 
@@ -210,8 +211,10 @@ The plan lives at `~/.claude/plans/breezy-knitting-dewdrop.md`. What matters fro
 
 ## Also read
 
-- [`incidents.md`](./incidents.md) — two production incidents, their causes, and what could not
-  be determined. The allow-list rule and the web-first order both come from here.
+- [`incidents.md`](./incidents.md) — two production incidents and one near miss, their causes,
+  and what could not be determined. The allow-list rule and the web-first order both come from
+  here. §3 is the near miss: the §8 chunk check could not fail under zsh, so the 2026-11-06
+  result for it is unverified and the 2026-11-10 one is the confirmed `0`.
 - [`deploy-r1a.md`](./deploy-r1a.md) — the next deploy, step by step.
 - `aylayoo-service/README.md` — bindings, migrations, seeds, the manual retention task.
 - `aylayoo-web/README.md` — build, preview, and why `NEXT_PUBLIC_API_URL` is pinned in the
