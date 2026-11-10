@@ -1,6 +1,7 @@
 # Where aylayoo stands
 
-Last updated 2026-11-06 (R1a deployed). Read this first, then the READMEs. This repo is **public** — never add
+Last updated 2026-11-10 (R1a live; home-page reachability deploy in progress). Read this first,
+then the READMEs. This repo is **public** — never add
 passwords, tokens, hashes, real guest or guide data, or anything from `private/` or `backups/`.
 
 ## The phases
@@ -17,9 +18,17 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
   **R1a shipped from this branch on 2026-11-06** — it is what is live. Not merged to `main`.
 - Migrations **`0004`** and **`0005`** are **applied on production**; nothing is pending. The
   retention work needed no migration — it only touches columns `0005` already creates.
-- The daily **retention Cron Trigger is registered**: `17 3 * * *`, confirmed in the deploy
-  output (`schedule: 17 3 * * *`).
-- 146 service tests, 662 web tests, typecheck and lint all green.
+- The daily **retention Cron Trigger is registered**: `17 3 * * *`, confirmed twice at deploy
+  time — the `wrangler deploy` output printed `schedule: 17 3 * * *`, and `wrangler triggers
+  deploy` reported the same. **Not yet confirmed in the dashboard**, and there is no read-only
+  way to confirm it from the CLI: `wrangler triggers` exposes only `deploy`, which is a write.
+  The open check is **Settings → Trigger Events**, plus a `contacts_cleared=0
+  requests_deleted=0` line in **Logs** for any 03:17 UTC run since 2026-11-07.
+- 146 service tests, 670 web tests, typecheck and lint all green.
+- **`0f71e82` makes guided tours reachable from the home page** — a named `Хөтөчтэй аялал` link
+  in `CitySection`, and `UlaanbaatarPage` opening a tab from the URL hash. Committed
+  2026-11-06, **after** that day's web deploy, so it is on the branch but **was not live**; the
+  deploy of it is the task in progress. It changes no API contract, so it ships web-only.
 
 ### What is live, and the version ids
 
@@ -32,10 +41,18 @@ Deployed **web first, then service** — see the ordering section below. The gap
 was inspected while it was open: the new web rendered guide cards against the old API with no
 stars and no TypeError, which is the failure that ordering exists to prevent.
 
-**R1a is live but has no reachable new surface yet.** No guide consent is recorded and no tour is
+**R1a has no published content yet, by design.** No guide consent is recorded and no tour is
 published, so `/api/city/tours` returns `{"data":[]}` and the Хөтөчтэй аялал tab shows its empty
 state. That is the consent gate working, not a fault — but it means nothing in R1a is visible to
 a visitor until somebody records consent and publishes a tour.
+
+**Reachability was the separate gap, and it is what `0f71e82` fixes.** As first deployed, the
+only route to guided tours was to land on `/ulaanbaatar` and notice the second of seven tabs —
+the home page never named them, which fails the home-page rule below. The click path once the
+pending web deploy lands: **`/` → the city section's `Хөтөчтэй аялал` button →
+`/ulaanbaatar#tours`**, which opens the tours tab directly. An empty tab is the correct
+destination today: the link must land on the tab's own "no tours published yet" message rather
+than a blank panel, and an unknown hash must fall back to the default tab. Both are tested.
 
 ### Fixed before deploying, after a pre-deploy review
 
@@ -65,15 +82,28 @@ a visitor until somebody records consent and publishes a tour.
 
 - All 50 production guides have **no aimag assigned**, so a tour's guide cannot be filtered by
   region.
-- `invocation_logs: false` is unconfirmed in the Cloudflare dashboard.
+- `invocation_logs: false` is unconfirmed in the Cloudflare dashboard, as is the retention Cron
+  Trigger under **Settings → Trigger Events**. Both are dashboard-only reads.
 - Email and SMS are unresolved, and R2 cannot be estimated until they are — see the plan's §11.
+- **`aylayoo-service/backups/` holds 5 export files and the rule is to keep the two most
+  recent.** Each one is a complete copy of every guide's contact details, so the surplus is the
+  kind of thing that should not sit around. The directory is gitignored and nothing in it has
+  ever been committed. Trimming it is the owned task in `aylayoo-service/README.md`
+  (S. Bolorsaikhan); `pre-0004-0005.sql` is also due for deletion 90 days after that migration,
+  i.e. from **2027-02-04**.
 
 ## The next single task
 
-**Record `tours` consent for one real guide who has actually agreed, then publish their tour** —
-that is what turns R1a from deployed into usable. Consent is a commitment made on somebody's
-behalf: do not record it until that guide has agreed, and put how it was obtained in the
-evidence note.
+**Deploy the web so `0f71e82` is live** — the home-page link is committed but production is
+still serving the build from before it. Web-only: the service is already at R1a and nothing in
+this commit touches an API contract. Rollback target is the current live web
+`daf23ac7-c20c-4df1-9623-3baad8ef9b7a`; per the rule below, the web must not go back past
+`a0a9200`, which rules out both `0cf42df7` and `388cf3b0`.
+
+**Then: record `tours` consent for one real guide who has actually agreed, and publish their
+tour** — that is what turns R1a from deployed into usable. Consent is a commitment made on
+somebody's behalf: do not record it until that guide has agreed, and put how it was obtained in
+the evidence note.
 
 R1a was the first of four stages. **Still not in scope:** saved plans (R1b), the guide portal
 (R2), reviews (R3), email or SMS. Never in scope: the SAT and goal-tracker apps elsewhere in
