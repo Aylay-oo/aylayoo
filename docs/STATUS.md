@@ -1,7 +1,7 @@
 # Where aylayoo stands
 
-Last updated 2026-11-10 (R1a live; guided tours now reachable from the home page). Read this
-first, then the READMEs. This repo is **public** — never add
+Last updated 2026-11-10 (R1a live and reachable; R1b built on another branch, not deployed).
+Read this first, then the READMEs. This repo is **public** — never add
 passwords, tokens, hashes, real guest or guide data, or anything from `private/` or `backups/`.
 
 ## The phases
@@ -10,21 +10,37 @@ passwords, tokens, hashes, real guest or guide data, or anything from `private/`
 |---|---|---|
 | **1** | The public site: home, aimags, places, guides, detail pages, SEO, sitemap | **Live** on https://aylayoo.com |
 | **2** | The Ulaanbaatar city section (`/ulaanbaatar`) — itineraries, walking routes, food, practical guide, phrasebook, events — all editable from `/admin` | **Live.** Food and events ship deliberately **empty**; the rest is drafted, unpublished |
-| **3** | Guide-led tours, trip requests, verified reviews, saved plans | **R1a is live** (2026-11-06). R1b, R2 and R3 not started |
+| **3** | Guide-led tours, trip requests, verified reviews, saved plans | **R1a is live** (2026-11-06, reachable since 2026-11-10). **R1b is built but NOT deployed** — on `feat/aylayoo-r1b`. R2 and R3 not started |
 
 ## Right now
 
-- Branch **`feat/aylayoo-phase3`**, branched from `feat/aylayoo-phase2` (`922b65a`).
-  **R1a shipped from this branch on 2026-11-06** — it is what is live. Not merged to `main`.
+- **Two branches, and only one of them is live.**
+  - **`feat/aylayoo-phase3`** — branched from `feat/aylayoo-phase2` (`922b65a`). R1a shipped
+    from here on 2026-11-06 and the home-page link on 2026-11-10. **This is what is live**, and
+    it is what gets pushed to the team's repo. Not merged to `main`.
+  - **`feat/aylayoo-r1b`** — branched from this one at `d6f1203`. Holds all of R1b (saved
+    plans) and **nothing of it is deployed**. Deliberately a separate branch so the team-repo
+    push cannot carry unfinished work; see the R1b section below.
+  Neither is merged to `main`, and they are not to be merged into each other.
 - Migrations **`0004`** and **`0005`** are **applied on production**; nothing is pending. The
   retention work needed no migration — it only touches columns `0005` already creates.
-- The daily **retention Cron Trigger is registered**: `17 3 * * *`, confirmed twice at deploy
-  time — the `wrangler deploy` output printed `schedule: 17 3 * * *`, and `wrangler triggers
-  deploy` reported the same. **Not yet confirmed in the dashboard**, and there is no read-only
-  way to confirm it from the CLI: `wrangler triggers` exposes only `deploy`, which is a write.
-  The open check is **Settings → Trigger Events**, plus a `contacts_cleared=0
-  requests_deleted=0` line in **Logs** for any 03:17 UTC run since 2026-11-07.
-- 146 service tests, 670 web tests, typecheck and lint all green.
+- The daily **retention Cron Trigger**: `17 3 * * *`. What is confirmed and what is not, because
+  the difference matters:
+  - **Confirmed at deploy time** — the `wrangler deploy` output printed `schedule: 17 3 * * *`,
+    and `wrangler triggers deploy` reported the same.
+  - **Confirmed read-only (2026-11-10)** — `wrangler versions view 07823b9a…` reports
+    `Handlers: fetch, scheduled`, so the live Worker does carry the scheduled handler. That is
+    necessary but not sufficient: a handler with no trigger never fires.
+  - **NOT confirmable from the CLI** — neither `wrangler versions view` nor
+    `wrangler deployments status` lists triggers, and `wrangler triggers` exposes only
+    `deploy`, which is a write. **No run has been observed.** Workers Logs is retained but
+    wrangler has no command to query it; `wrangler tail` is live-only.
+  - **The open check is the dashboard**: **Workers & Pages → `aylayoo-service` → Settings →
+    Trigger Events** should list `17 3 * * *`, and **Workers & Pages → `aylayoo-service` →
+    Logs** should hold a `contacts_cleared=0 requests_deleted=0` line for each 03:17 UTC run.
+    Four are due (7, 8, 9, 10 November). An empty run is the expected result — nothing is due
+    to be cleared for 90 days — so what is being checked is that the line exists at all.
+- 146 service tests, 670 web tests, typecheck and lint all green on this branch.
 - **`0f71e82` makes guided tours reachable from the home page** — a named `Хөтөчтэй аялал` link
   in `CitySection`, and `UlaanbaatarPage` opening a tab from the URL hash. Committed
   2026-11-06, **after** that day's web deploy, so it sat on the branch unshipped for four days.
@@ -55,6 +71,30 @@ of 2026-11-10: **`/` → the city section's `Хөтөчтэй аялал` button
 which opens the tours tab directly. An empty tab is the correct
 destination today: the link must land on the tab's own "no tours published yet" message rather
 than a blank panel, and an unknown hash must fall back to the default tab. Both are tested.
+
+### R1b is built, and none of it is live
+
+Saved plans — account-free lists of places, tours, itineraries and walking routes, shared by a
+link. It is all on **`feat/aylayoo-r1b`**, with its own step-by-step in `docs/deploy-r1b.md`
+**on that branch**, and nothing has been deployed: migration `0006` (`saved_plans`) is applied
+to the **local** D1 only, and production has no `saved_plans` table and no `/api/plans`.
+
+What matters from here without reading that branch:
+
+- **Two capability tokens, no accounts.** A read-only share token travels in the URL *fragment*
+  of `/plans/shared#<token>`, which a browser never transmits; a separate edit token travels
+  only in an `Authorization` header. Both are stored SHA-256 hashed, so **nobody can recover a
+  share link — not an admin, not the team.** Somebody who loses it has lost the plan.
+- **The table holds no personal data by construction** — no name, email or phone column exists,
+  items are `{kind, id}` pointers to published rows, and the one free-text field (the title) is
+  refused if it is phone- or email-shaped.
+- **It would deploy SERVICE FIRST**, the opposite of R1a, because it only adds endpoints: an
+  old web against the new service is invisible, while a new web against the old service would
+  let a visitor collect places and then fail to save them.
+- 198 service tests and 721 web tests pass on that branch.
+
+**Do not merge or cherry-pick it onto this branch**, and do not include it in a team-repo push.
+That separation is the whole reason it has its own branch.
 
 ### Fixed before deploying, after a pre-deploy review
 
@@ -97,14 +137,36 @@ than a blank panel, and an unknown hash must fall back to the default tab. Both 
 
 ## The next single task
 
-**Record `tours` consent for one real guide who has actually agreed, and publish their
-tour** — that is what turns R1a from deployed into usable. Consent is a commitment made on
-somebody's behalf: do not record it until that guide has agreed, and put how it was obtained in
-the evidence note.
+**Record `tours` consent for one real guide who has actually agreed, then publish their
+tour** — that is what turns R1a from deployed into usable. Everything else is secondary: until
+one tour is published, `/api/city/tours` returns `{"data":[]}` and the Хөтөчтэй аялал tab shows
+its empty state, so no visitor can see anything R1a built.
 
-R1a was the first of four stages. **Still not in scope:** saved plans (R1b), the guide portal
-(R2), reviews (R3), email or SMS. Never in scope: the SAT and goal-tracker apps elsewhere in
-this monorepo.
+Consent is a commitment made on somebody's behalf. **Do not record it until that guide has
+actually agreed**, and write how it was obtained into the evidence note. It is recorded in
+`/admin` → the consent panel, per guide, scope `tours`.
+
+After that, the next decision is whether to deploy R1b — see `docs/deploy-r1b.md` on
+`feat/aylayoo-r1b`.
+
+**Still not in scope:** the guide portal (R2), reviews (R3), email or SMS. Never in scope: the
+SAT and goal-tracker apps elsewhere in this monorepo.
+
+### Open tasks only a person can do
+
+None of these can be finished by reading or changing code, which is why they are listed
+together rather than scattered through the sections above.
+
+| task | why it needs a person |
+|---|---|
+| **Record `tours` consent for a real guide, then publish their tour** | Somebody has to ask the guide and get a yes. See the next-single-task note above. |
+| **Confirm the Cron Trigger in the dashboard** | Settings → Trigger Events, and a `contacts_cleared=…` line in Logs. Not readable from the CLI — see *Right now*. |
+| **Confirm `invocation_logs: false`** | Dashboard-only read, on the same Settings page. |
+| **Assign aimags to the 50 roster guides** | The association's roster does not record them, so each one is a judgement about a real person's working region. `/admin` → approved guides. |
+| **Check R1a on a phone** | The local preview binds to localhost, so phone width has never been seen on real hardware. |
+| **Trim `backups/` weekly, and delete `pre-0004-0005.sql` from 2027-02-04** | Local files on a laptop holding every guide's contact details; no cron can reach them. Owner: S. Bolorsaikhan. |
+| **Decide the §11 email/SMS provider** | R2 cannot be estimated until it is resolved, and MailChannels' free Workers integration was withdrawn. Research from official sources and write the findings into `docs/` with dates. |
+| **Decide whether guide cards should send trip requests** | A promise to a guide, not a screen change — see the deferred decision above. |
 
 ### Known gap found in the post-deploy reachability audit
 
@@ -115,6 +177,14 @@ approval and `requests`-consent checks; service tests cover it) but **no screen 
 the Phase 1/2 `ContactDialog`, which posts to `/api/contact`. Consequence worth knowing:
 recording `requests` consent for a guide has no user-visible effect unless that guide also has a
 published tour.
+
+**Decision: left as it is, deliberately, and deferred.** `ContactDialog` stays unchanged on
+guide cards and on `/guides/:id` for now. Pointing those at `TripRequestDialog` would start
+routing strangers' trip requests to individual guides, and that is a change in what the site
+promises a guide rather than a change of screen — it needs `requests` consent recorded per
+guide first, and somebody has to decide whether a guide with no published tour should receive
+requests at all. **Whoever picks this up:** the API side already works and is tested, so this is
+a front-end and consent question, not a missing feature. Do not wire it up as a tidy-up task.
 
 ## Tours are not in the CRUD factory
 
